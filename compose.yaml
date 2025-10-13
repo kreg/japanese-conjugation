@@ -1,0 +1,9 @@
+services:
+  server:
+    build:
+      context: .
+    ports:
+      - 1234:1234
+      - 9229:9229
+    volumes:
+      - ./src:/usr/src/app/src
