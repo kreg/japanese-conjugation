@@ -5,6 +5,13 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "type": "node-terminal",
+            "name": "Run Script: dev",
+            "request": "launch",
+            "command": "npm run dev",
+            "cwd": "${workspaceFolder}"
+        },
+        {
             "type": "chrome",
             "request": "launch",
             "name": "Launch Chrome against localhost",
@@ -12,7 +19,7 @@
             "webRoot": "${workspaceFolder}",
             "sourceMapPathOverrides": {
                 "/__parcel_source_root/*": "${webRoot}/*"
-            }
+            },
         }
     ]
 }
