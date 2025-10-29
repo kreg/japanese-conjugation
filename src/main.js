@@ -1431,8 +1431,8 @@ function updateProbabilites(
 	normalizeProbabilities(currentWords);
 }
 
-function analyzeResponseTimes(currentWordList) {
-	console.log("Response times")
+function dumpStats(currentWordList) {
+	console.log("\nStats")
 	const stats = {}
 	for (let i = 0; i < currentWordList.length; i++) {
 		for (let j = 0; j < currentWordList[i].length; j++) {
@@ -1442,7 +1442,7 @@ function analyzeResponseTimes(currentWordList) {
 				if (stats[hiraganaAnswerLength] === undefined) {
 					stats[hiraganaAnswerLength] = {}
 				}
-				stats[hiraganaAnswerLength][kanjiAnswer] = currentWordList[i][j].responseTimesMs
+				stats[hiraganaAnswerLength][kanjiAnswer] = currentWordList[i][j]
 			}
 		}
 	}
@@ -1450,7 +1450,9 @@ function analyzeResponseTimes(currentWordList) {
 	// Within each wordLength, sort by fastest response time
 	Object.keys(stats).forEach(wordLength => {
 		stats[wordLength] = Object.fromEntries(
-			Object.entries(stats[wordLength]).sort(([, a], [, b]) => Math.min(...a) - Math.min(...b))
+			Object.entries(stats[wordLength]).sort(
+				([, a], [, b]) => Math.min(...a.responseTimesMs) - Math.min(...b.responseTimesMs)
+			)
 		);
 	});
 
@@ -1460,20 +1462,26 @@ function analyzeResponseTimes(currentWordList) {
 	for (const [wordLength, value] of Object.entries(stats)) {
 		console.log(wordLength + " character Words")
 		let fastestTimeForWordLength = Number.MAX_SAFE_INTEGER;
-		for (const [kanji, responseTimesMs] of Object.entries(value)) {
-			let fastestTime = Math.min(...responseTimesMs);
+		for (const [kanji, word] of Object.entries(value)) {
+			let fastestTime = Math.min(...word.responseTimesMs);
 			if (fastestTime < fastestTimeForWordLength) {
 				fastestTimeForWordLength = fastestTime;
 			}
 			if (shortestWord == true) {
-				console.log(kanji + ": " + responseTimesMs.join(", ") + ", Fastest time: " + fastestTime)
+				console.log(
+					kanji + ": " + word.responseTimesMs.join(", ") +
+					", Fastest time: " + fastestTime +
+					", Probability: " + word.probability
+				)
 				shortestWordLength = wordLength;
 				fastestTimeForShortestWord = fastestTimeForWordLength
 			} else {
 				timePerExtraCharacter = (fastestTime - fastestTimeForShortestWord) / (wordLength - shortestWordLength);
 				console.log(
-					kanji + ": " + responseTimesMs.join(", ") + ", Fastest time: ", fastestTime +
-					", Per extra character time: " + timePerExtraCharacter
+					kanji + ": " + word.responseTimesMs.join(", ") +
+					", Fastest time: ", fastestTime +
+					", Per extra character time: " + timePerExtraCharacter +
+					", Probability: " + word.probability
 				);
 			}
 		}
@@ -1816,7 +1824,6 @@ class ConjugationApp {
 				responseTimeMs = Number.MAX_SAFE_INTEGER;
 			}
 			this.state.currentWord.responseTimesMs.push(responseTimeMs);
-			analyzeResponseTimes(this.state.currentWordList);
 
 			updateProbabilites(
 				this.state.currentWordList,
@@ -1824,6 +1831,8 @@ class ConjugationApp {
 				this.state.currentWord,
 				inputWasCorrect
 			);
+
+			dumpStats(this.state.currentWordList);
 
 			if (inputWasCorrect) {
 				addToScore(1, this.state.maxScoreObjects, this.state.maxScoreIndex);
