@@ -1361,7 +1361,6 @@ function updateProbabilites(
 		currentWords,
 		wordsRecentlySeenQueue,
 		currentWord,
-		currentWordWasCorrect,
 		roundsToWait)
 
 	// Keep track of misses so when the user finally gets it right,
@@ -1384,7 +1383,6 @@ function standardProbabilitySetter(
 	currentWords,
 	wordsRecentlySeenQueue,
 	currentWord,
-	currentWordWasCorrect,
 	roundsToWait
 ) {
 	// Lower probability of running into words in the same group
