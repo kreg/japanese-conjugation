@@ -1357,7 +1357,36 @@ function updateProbabilites(
 		normalizeProbabilities(currentWords);
 		return;
 	}
+	standardProbabilitySetter(
+		currentWords,
+		wordsRecentlySeenQueue,
+		currentWord,
+		currentWordWasCorrect,
+		roundsToWait)
 
+	// Keep track of misses so when the user finally gets it right,
+	// we can still give it a higher probability of appearing again than
+	// questions they got right on the first try.
+	if (!currentWordWasCorrect) {
+		currentWord.wasRecentlyIncorrect = true;
+	}
+
+	wordsRecentlySeenQueue.push(
+		new WordRecentlySeen(currentWord, currentWordWasCorrect)
+	);
+	// Make sure the user will not see the current question until at least "roundsToWait" number of rounds
+	currentWord.probability = 0;
+
+	normalizeProbabilities(currentWords);
+}
+
+function standardProbabilitySetter(
+	currentWords,
+	wordsRecentlySeenQueue,
+	currentWord,
+	currentWordWasCorrect,
+	roundsToWait
+) {
 	// Lower probability of running into words in the same group
 	if (currentWord.wordJSON.group) {
 		const currentConjugation = currentWord.conjugation;
@@ -1414,21 +1443,6 @@ function updateProbabilites(
 
 		dequeuedWord.word.probability = newProbability;
 	}
-
-	// Keep track of misses so when the user finally gets it right,
-	// we can still give it a higher probability of appearing again than
-	// questions they got right on the first try.
-	if (!currentWordWasCorrect) {
-		currentWord.wasRecentlyIncorrect = true;
-	}
-
-	wordsRecentlySeenQueue.push(
-		new WordRecentlySeen(currentWord, currentWordWasCorrect)
-	);
-	// Make sure the user will not see the current question until at least "roundsToWait" number of rounds
-	currentWord.probability = 0;
-
-	normalizeProbabilities(currentWords);
 }
 
 function dumpStats(currentWordList) {
