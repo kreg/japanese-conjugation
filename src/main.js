@@ -1433,6 +1433,7 @@ function updateProbabilites(
 
 function dumpStats(currentWordList) {
 	console.log("\nStats")
+	let unseenWordProbability = -1;
 	const stats = {}
 	for (let i = 0; i < currentWordList.length; i++) {
 		for (let j = 0; j < currentWordList[i].length; j++) {
@@ -1443,6 +1444,12 @@ function dumpStats(currentWordList) {
 					stats[hiraganaAnswerLength] = {}
 				}
 				stats[hiraganaAnswerLength][kanjiAnswer] = currentWordList[i][j]
+			} else {
+				if (unseenWordProbability == -1) {
+					unseenWordProbability = currentWordList[i][j].probability
+				} else if (unseenWordProbability != currentWordList[i][j].probability) {
+					console.error("Expected unseen words to all have the same probability")
+				}
 			}
 		}
 	}
@@ -1469,7 +1476,7 @@ function dumpStats(currentWordList) {
 			}
 			if (shortestWord == true) {
 				console.log(
-					kanji + ": " + word.responseTimesMs.join(", ") +
+					kanji + " Response Times " + word.responseTimesMs.join(", ") +
 					", Fastest time: " + fastestTime +
 					", Probability: " + word.probability
 				)
@@ -1478,7 +1485,7 @@ function dumpStats(currentWordList) {
 			} else {
 				timePerExtraCharacter = (fastestTime - fastestTimeForShortestWord) / (wordLength - shortestWordLength);
 				console.log(
-					kanji + ": " + word.responseTimesMs.join(", ") +
+					kanji + " Response Times " + word.responseTimesMs.join(", ") +
 					", Fastest time: ", fastestTime +
 					", Per extra character time: " + timePerExtraCharacter +
 					", Probability: " + word.probability
@@ -1487,6 +1494,8 @@ function dumpStats(currentWordList) {
 		}
 		shortestWord = false;
 	}
+	console.log("Unseen Words");
+	console.log("Probability: " + unseenWordProbability);
 }
 
 
