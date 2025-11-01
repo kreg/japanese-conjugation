@@ -1307,15 +1307,13 @@ function updateProbabilites(currentWords, wordsRecentlySeenQueue, currentWord) {
 	// We wait "roundsToWait" rounds to set the probability of questions.
 	// This allows us to have a few rounds immediately after a question where it's guaranteed to not appear again,
 	// followed by the ability to set a high probability for the question to show up immediately after that waiting period (if the answer was incorrect).
-	if (wordsRecentlySeenQueue.length < roundsToWait) {
-		return;
+	if (wordsRecentlySeenQueue.length >= roundsToWait) {
+		let dequeuedWord = wordsRecentlySeenQueue.shift();
+		let wordLength = dequeuedWord.conjugation.validAnswers[0].length;
+		let probabilityWeight = getProbabilityWeight(dequeuedWord.responseTimesMs, wordLength);
+		console.log(dequeuedWord.conjugation.validAnswers[1] + " probability weight " + probabilityWeight);
+		dequeuedWord.probability = probabilityWeight
 	}
-
-	let dequeuedWord = wordsRecentlySeenQueue.shift();
-	let wordLength = dequeuedWord.conjugation.validAnswers[0].length;
-	let probabilityWeight = getProbabilityWeight(dequeuedWord.responseTimesMs, wordLength);
-	console.log(dequeuedWord.conjugation.validAnswers[1] + " probability weight " + probabilityWeight);
-	dequeuedWord.probability = probabilityWeight
 
 	wordsRecentlySeenQueue.push(currentWord);
 
