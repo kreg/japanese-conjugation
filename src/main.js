@@ -22,7 +22,6 @@ import { wordData } from "./wordData.js";
 import { CONJUGATION_TYPES, PARTS_OF_SPEECH } from "./wordEnums.js";
 import {
 	toggleDisplayNone,
-	createArrayOfArrays,
 	toggleBackgroundNone,
 } from "./utils.js";
 
@@ -688,7 +687,7 @@ function changeToPastPlain(c) {
 function masuStem(baseVerbText, type) {
 	return type == "u"
 		? baseVerbText.substring(0, baseVerbText.length - 1) +
-				changeUtoI(baseVerbText.charAt(baseVerbText.length - 1))
+		changeUtoI(baseVerbText.charAt(baseVerbText.length - 1))
 		: baseVerbText.substring(0, baseVerbText.length - 1);
 }
 
@@ -696,8 +695,8 @@ function masuStem(baseVerbText, type) {
 function plainNegativeComplete(hiraganaVerb, type) {
 	return type == "u"
 		? hiraganaVerb.substring(0, hiraganaVerb.length - 1) +
-				changeUtoA(hiraganaVerb.charAt(hiraganaVerb.length - 1)) +
-				"ない"
+		changeUtoA(hiraganaVerb.charAt(hiraganaVerb.length - 1)) +
+		"ない"
 		: hiraganaVerb.substring(0, hiraganaVerb.length - 1) + "ない";
 }
 
@@ -908,7 +907,7 @@ const conjugationFunctions = {
 			if (type === "u") {
 				roots.push(
 					dropFinalLetter(baseVerbText) +
-						changeUtoE(baseVerbText.charAt(baseVerbText.length - 1))
+					changeUtoE(baseVerbText.charAt(baseVerbText.length - 1))
 				);
 			} else if (type === "ru") {
 				// The default spelling should be the dictionary correct "られる",
@@ -1265,182 +1264,140 @@ class Word {
 
 		// Probability is updated directly by external functions
 		this.probability = 0;
-		// wasRecentlyIncorrect is used when calculating probability
-		this.wasRecentlyIncorrect = false;
 		// Response times in ms for this word
 		this.responseTimesMs = [];
 	}
-}
 
-class WordRecentlySeen {
-	constructor(word, wasCorrect) {
-		this.word = word;
-		this.wasCorrect = wasCorrect;
-	}
-}
-
-function findMinProb(currentWords) {
-	let min = 2;
-	for (let i = 0; i < currentWords.length; i++) {
-		for (let j = 0; j < currentWords[i].length; j++) {
-			min =
-				currentWords[i][j].probability < min &&
-				currentWords[i][j].probability != 0
-					? currentWords[i][j].probability
-					: min;
+	addResponseTime(inputWasCorrect, startTimestamp) {
+		const maxResponseTimeSlots = 3;
+		if (inputWasCorrect) {
+			this.responseTimesMs.push(Date.now() - startTimestamp);
+		} else {
+			this.responseTimesMs.push(Number.MAX_SAFE_INTEGER);
 		}
-	}
-	return min;
-}
-
-function findMaxProb(currentWords) {
-	let max = 0;
-	for (let i = 0; i < currentWords.length; i++) {
-		for (let j = 0; j < currentWords[i].length; j++) {
-			max =
-				currentWords[i][j].probability > max
-					? currentWords[i][j].probability
-					: max;
-		}
-	}
-	return max;
-}
-
-function normalizeProbabilities(currentWords) {
-	let totalProbability = 0;
-	// get total of probabilities
-	for (let i = 0; i < currentWords.length; i++) {
-		for (let j = 0; j < currentWords[i].length; j++) {
-			totalProbability += currentWords[i][j].probability;
-		}
-	}
-
-	// normalize
-	for (let i = 0; i < currentWords.length; i++) {
-		for (let j = 0; j < currentWords[i].length; j++) {
-			currentWords[i][j].probability /= totalProbability;
+		// Delete the oldest response time if we are full
+		if (this.responseTimesMs.length > maxResponseTimeSlots) {
+			this.responseTimesMs.shift()
 		}
 	}
 }
 
 function setAllProbabilitiesToValue(currentWords, value) {
 	for (let i = 0; i < currentWords.length; i++) {
-		for (let j = 0; j < currentWords[i].length; j++) {
-			currentWords[i][j].probability = value;
-		}
+		currentWords[i].probability = value;
 	}
 }
 
-// Sets all of the probabilities to the same normalized value
+// Sets all of the probabilities to the same value
 function equalizeProbabilities(currentWords) {
-	setAllProbabilitiesToValue(currentWords, 1);
-
-	// Now that all of the probabilities are equal,
-	// normalize them so together they all add up to 1.
-	normalizeProbabilities(currentWords);
+	setAllProbabilitiesToValue(currentWords, getProbabilityWeight([], -1));
 }
 
-function updateProbabilites(
-	currentWords,
-	wordsRecentlySeenQueue,
-	currentWord,
-	currentWordWasCorrect
-) {
+function updateProbabilites(currentWords, wordsRecentlySeenQueue, currentWord) {
 	const roundsToWait = 2;
 
 	// If the number of current verb + adjective conjugations is less than roundsToWait + 1,
 	// the pool of conjugations is too small for our wordsRecentlySeenQueue to work.
-	if (currentWords[0].length + currentWords[1].length < roundsToWait + 1) {
+	if (currentWords.length < roundsToWait + 1) {
 		// Set all probabilities except the current word to be equal to avoid getting the same question twice
-		setAllProbabilitiesToValue(currentWords, 1);
+		equalizeProbabilities(currentWords);
 		currentWord.probability = 0;
-		normalizeProbabilities(currentWords);
 		return;
 	}
-	standardProbabilitySetter(
-		currentWords,
-		wordsRecentlySeenQueue,
-		currentWord,
-		roundsToWait)
-
-	// Keep track of misses so when the user finally gets it right,
-	// we can still give it a higher probability of appearing again than
-	// questions they got right on the first try.
-	if (!currentWordWasCorrect) {
-		currentWord.wasRecentlyIncorrect = true;
-	}
-
-	wordsRecentlySeenQueue.push(
-		new WordRecentlySeen(currentWord, currentWordWasCorrect)
-	);
-	// Make sure the user will not see the current question until at least "roundsToWait" number of rounds
-	currentWord.probability = 0;
-
-	normalizeProbabilities(currentWords);
-}
-
-function standardProbabilitySetter(
-	currentWords,
-	wordsRecentlySeenQueue,
-	currentWord,
-	roundsToWait
-) {
-	// Lower probability of running into words in the same group
-	if (currentWord.wordJSON.group) {
-		const currentConjugation = currentWord.conjugation;
-		const group = currentWord.wordJSON.group;
-
-		currentWords[
-			getPartOfSpeech(currentWord.wordJSON) === PARTS_OF_SPEECH.verb ? 0 : 1
-		]
-			.filter((word) => {
-				const conjugation = word.conjugation;
-				// Only alter probabilities of the exact same conjugation for other words in the group
-				return (
-					word.wordJSON.group === group &&
-					word !== currentWord &&
-					conjugation.type === currentConjugation.type &&
-					conjugation.affirmative === currentConjugation.affirmative &&
-					conjugation.polite === currentConjugation.polite
-				);
-			})
-			.forEach((word) => {
-				// Have to be careful with lowering this too much, because it can affect findMinProb for other conjugations.
-				// Also, lowering it by a lot will make all of these words appear in a cluster after all the other words have been seen.
-				// Note that this is happening whether currentWordWasCorrect is true or false,
-				// so if someone got currentWord wrong many times it would tank the probabilities in this forEach over time.
-				word.probability /= 3;
-			});
-	}
-
 	// We wait "roundsToWait" rounds to set the probability of questions.
 	// This allows us to have a few rounds immediately after a question where it's guaranteed to not appear again,
 	// followed by the ability to set a high probability for the question to show up immediately after that waiting period (if the answer was incorrect).
-	if (wordsRecentlySeenQueue.length >= roundsToWait) {
-		let dequeuedWord = wordsRecentlySeenQueue.shift();
-		// Using findMinProb isn't a good solution because if you get one correct it's going to shrink the min prob a lot and affect future questions you get right or wrong.
-		// In the future there should probably be a static probability given to corrects, incorrects, and unseens, where that probability slowly grows the longer the word hasn't been seen.
-		let currentMinProb = findMinProb(currentWords);
-		const correctProbModifier = 0.5;
-		const incorrectProbModifier = 0.85;
-
-		let newProbability;
-
-		if (dequeuedWord.wasCorrect && !dequeuedWord.word.wasRecentlyIncorrect) {
-			newProbability = currentMinProb * correctProbModifier;
-		} else if (
-			dequeuedWord.wasCorrect &&
-			dequeuedWord.word.wasRecentlyIncorrect
-		) {
-			newProbability = currentMinProb * incorrectProbModifier;
-			dequeuedWord.word.wasRecentlyIncorrect = false;
-		} else if (!dequeuedWord.wasCorrect) {
-			// Set to an arbitrary high number to (nearly) guarantee this question is asked next.
-			newProbability = 10;
-		}
-
-		dequeuedWord.word.probability = newProbability;
+	if (wordsRecentlySeenQueue.length < roundsToWait) {
+		return;
 	}
+
+	let dequeuedWord = wordsRecentlySeenQueue.shift();
+	let wordLength = dequeuedWord.conjugation.validAnswers[0].length;
+	let probabilityWeight = getProbabilityWeight(dequeuedWord.responseTimesMs, wordLength);
+	console.log(dequeuedWord.conjugation.validAnswers[1] + " probability weight " + probabilityWeight);
+	dequeuedWord.probability = probabilityWeight
+
+	wordsRecentlySeenQueue.push(currentWord);
+
+	// Make sure the user will not see the current question until at least "roundsToWait" number of rounds
+	currentWord.probability = 0;
+}
+
+class ResponseTypes {
+	constructor(text, probabilityWeight) {
+		this.text = text;
+		this.probabilityWeight = probabilityWeight;
+	}
+}
+
+const FAST_RESPONSE = new ResponseTypes("Fast!", 1);
+const MODERATE_RESPONSE = new ResponseTypes("Correct", 10);
+const UNSEEN_RESPONSE = new ResponseTypes("unseen", 15);
+const SLOW_RESPONSE = new ResponseTypes("Slow", 20);
+const WRONG_RESPONSE = new ResponseTypes("wrong", 500);
+
+function getResponseTypeFromTimeMs(responseTimeMs, wordLength) {
+	const perCharacterTimeMs = 500;
+	const fastTimeMs = 500;
+	const moderateTimeMs = 2000;
+	if (responseTimeMs == Number.MAX_SAFE_INTEGER) {
+		return WRONG_RESPONSE;
+	}
+	if (responseTimeMs <= fastTimeMs + perCharacterTimeMs * wordLength) {
+		return FAST_RESPONSE;
+	}
+	if (responseTimeMs <= moderateTimeMs + perCharacterTimeMs * wordLength) {
+		return MODERATE_RESPONSE;
+	}
+	return SLOW_RESPONSE;
+}
+
+class RecencyProbabilityWeighter {
+	constructor(responseTimesMs, recencyWeights) {
+		this.responseTimesMs = structuredClone(responseTimesMs);
+		this.recencyWeights = recencyWeights;
+	}
+	get(wordLength) {
+		let recencyWeight = this.recencyWeights.pop();
+		if (recencyWeight === undefined) {
+			return null;
+		}
+		let responseTimeMs = this.responseTimesMs.pop();
+		if (responseTimeMs === undefined) {
+			return UNSEEN_RESPONSE.probabilityWeight * recencyWeight;
+		} else {
+			return getResponseTypeFromTimeMs(responseTimeMs, wordLength).probabilityWeight * recencyWeight;
+		}
+	}
+}
+
+function getProbabilityWeight(responseTimesMs, wordLength) {
+	let recencyProbabilityWeighter = new RecencyProbabilityWeighter(responseTimesMs, [3, 2, 1]);
+	let probabilityWeight = 0;
+	while (true) {
+		let probabiltyWeightForResponse = recencyProbabilityWeighter.get(wordLength);
+		if (probabiltyWeightForResponse === null) {
+			break;
+		}
+		probabilityWeight += probabiltyWeightForResponse;
+	}
+	return probabilityWeight;
+}
+
+function dumpProbabilities(currentWords) {
+	console.log("---- Probabilities ----");
+	let probabilities = {};
+	for (let i = 0; i < currentWords.length; i++) {
+		if (probabilities[currentWords[i].probability] === undefined) {
+			probabilities[currentWords[i].probability] = []
+		}
+		probabilities[currentWords[i].probability].push(
+			currentWords[i].conjugation.validAnswers[1]
+		);
+	}
+	Object.entries(probabilities).forEach(([key, value]) => {
+		console.log(key + ": " + value.join(", "));
+	});
 }
 
 function dumpStats(currentWordList) {
@@ -1448,20 +1405,18 @@ function dumpStats(currentWordList) {
 	let unseenWordProbability = -1;
 	const stats = {}
 	for (let i = 0; i < currentWordList.length; i++) {
-		for (let j = 0; j < currentWordList[i].length; j++) {
-			if (currentWordList[i][j].responseTimesMs.length > 0) {
-				let kanjiAnswer = currentWordList[i][j].conjugation.validAnswers[1]
-				let hiraganaAnswerLength = currentWordList[i][j].conjugation.validAnswers[0].length
-				if (stats[hiraganaAnswerLength] === undefined) {
-					stats[hiraganaAnswerLength] = {}
-				}
-				stats[hiraganaAnswerLength][kanjiAnswer] = currentWordList[i][j]
-			} else {
-				if (unseenWordProbability == -1) {
-					unseenWordProbability = currentWordList[i][j].probability
-				} else if (unseenWordProbability != currentWordList[i][j].probability) {
-					console.error("Expected unseen words to all have the same probability")
-				}
+		if (currentWordList[i].responseTimesMs.length > 0) {
+			let kanjiAnswer = currentWordList[i].conjugation.validAnswers[1]
+			let hiraganaAnswerLength = currentWordList[i].conjugation.validAnswers[0].length
+			if (stats[hiraganaAnswerLength] === undefined) {
+				stats[hiraganaAnswerLength] = {}
+			}
+			stats[hiraganaAnswerLength][kanjiAnswer] = currentWordList[i]
+		} else {
+			if (unseenWordProbability == -1) {
+				unseenWordProbability = currentWordList[i].probability
+			} else if (unseenWordProbability != currentWordList[i].probability) {
+				console.error("Expected unseen words to all have the same probability")
 			}
 		}
 	}
@@ -1505,21 +1460,20 @@ function dumpStats(currentWordList) {
 			}
 		}
 		shortestWord = false;
+		console.log("Unseen Words");
+		console.log("Probability: " + unseenWordProbability);
 	}
-	console.log("Unseen Words");
-	console.log("Probability: " + unseenWordProbability);
 }
 
-
-// returns 2D array [verbarray, adjarray]
+// returns new object with all conjugations
 function createWordList(JSONWords) {
-	let wordList = createArrayOfArrays(JSONWords.length);
-
-	for (let i = 0; i < JSONWords.length; i++) {
-		for (let j = 0; j < JSONWords[i].length; j++) {
-			let conjugations = getAllConjugations(JSONWords[i][j]);
-			for (let k = 0; k < conjugations.length; k++) {
-				wordList[i].push(new Word(JSONWords[i][j], conjugations[k]));
+	let wordList = {}
+	for ([key, value] of Object.entries(JSONWords)) {
+		wordList[key] = [];
+		for (let i = 0; i < value.length; i++) {
+			let conjugations = getAllConjugations(value[i]);
+			for (let j = 0; j < conjugations.length; j++) {
+				wordList[key].push(new Word(value[i], conjugations[j]));
 			}
 		}
 	}
@@ -1527,21 +1481,22 @@ function createWordList(JSONWords) {
 }
 
 function pickRandomWord(wordList) {
-	let random = Math.random();
-
+	let sum = 0;
+	for (let i = 0; i < wordList.length; i++) {
+		sum += wordList[i].probability;
+	}
+	let random = Math.random() * sum;
 	try {
 		for (let i = 0; i < wordList.length; i++) {
-			for (let j = 0; j < wordList[i].length; j++) {
-				if (random < wordList[i][j].probability) {
-					return wordList[i][j];
-				}
-				random -= wordList[i][j].probability;
+			if (random < wordList[i].probability) {
+				return wordList[i];
 			}
+			random -= wordList[i].probability;
 		}
 		throw "no random word chosen";
 	} catch (err) {
 		console.error(err);
-		return wordList[0][0];
+		return wordList[0];
 	}
 }
 
@@ -1601,13 +1556,12 @@ function updateStatusBoxes(word, entryText) {
 	if (word.conjugation.validAnswers.some((e) => e == entryText)) {
 		statusBox.style.background = "green";
 		const subConjugationForm = getSubConjugationForm(word, entryText);
-		document.getElementById("status-text").innerHTML = `Correct${
-			subConjugationForm != null
-				? '<span class="sub-conjugation-indicator">(' +
-				  subConjugationForm +
-				  ")</span>"
-				: ""
-		}<br>${entryText} ○`;
+		document.getElementById("status-text").innerHTML = `Correct${subConjugationForm != null
+			? '<span class="sub-conjugation-indicator">(' +
+			subConjugationForm +
+			")</span>"
+			: ""
+			}<br>${entryText} ○`;
 	} else {
 		document.getElementById("verb-box").style.background = typeToWordBoxColor(
 			word.wordJSON.type
@@ -1669,7 +1623,7 @@ export class MaxScoreObject {
 // Array index 0 = verbs, 1 = adjectives
 // Stored in an array instead of object to make parsing faster. Upon reflection this was not worth it.
 function initApp() {
-	new ConjugationApp([wordData.verbs, wordData.adjectives]);
+	new ConjugationApp(wordData);
 }
 
 class ConjugationApp {
@@ -1750,12 +1704,12 @@ class ConjugationApp {
 		showFurigana(
 			this.state.settings.furigana,
 			this.state.settings.furiganaTiming ===
-				CONDITIONAL_UI_TIMINGS.onlyAfterAnswering
+			CONDITIONAL_UI_TIMINGS.onlyAfterAnswering
 		);
 		showTranslation(
 			this.state.settings.translation,
 			this.state.settings.translationTiming ===
-				CONDITIONAL_UI_TIMINGS.onlyAfterAnswering
+			CONDITIONAL_UI_TIMINGS.onlyAfterAnswering
 		);
 
 		const mainInput = document.getElementById("main-text-input");
@@ -1837,23 +1791,16 @@ class ConjugationApp {
 					(e) => e == inputValue
 				);
 
-			// record response times
-			let responseTimeMs;
-			if (inputWasCorrect) {
-				responseTimeMs = Date.now() - this.state.startTimestamp;
-			} else {
-				responseTimeMs = Number.MAX_SAFE_INTEGER;
-			}
-			this.state.currentWord.responseTimesMs.push(responseTimeMs);
+			// record response time
+			this.state.currentWord.addResponseTime(inputWasCorrect, this.state.startTimestamp);
 
 			updateProbabilites(
 				this.state.currentWordList,
 				this.state.wordsRecentlySeenQueue,
-				this.state.currentWord,
-				inputWasCorrect
+				this.state.currentWord
 			);
-
 			dumpStats(this.state.currentWordList);
+			dumpProbabilities(this.state.currentWordList);
 
 			if (inputWasCorrect) {
 				addToScore(1, this.state.maxScoreObjects, this.state.maxScoreIndex);
