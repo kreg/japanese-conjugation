@@ -1328,16 +1328,16 @@ class ResponseTypes {
 	}
 }
 
-const FAST_RESPONSE = new ResponseTypes("Fast!", 1);
-const MODERATE_RESPONSE = new ResponseTypes("Correct", 10);
-const UNSEEN_RESPONSE = new ResponseTypes("unseen", 15);
-const SLOW_RESPONSE = new ResponseTypes("Slow", 20);
+const FAST_RESPONSE = new ResponseTypes("fast", 1);
+const UNSEEN_RESPONSE = new ResponseTypes("unseen", 5);
+const MODERATE_RESPONSE = new ResponseTypes("moderate", 50);
+const SLOW_RESPONSE = new ResponseTypes("slow", 100);
 const WRONG_RESPONSE = new ResponseTypes("wrong", 500);
 
 function getResponseTypeFromTimeMs(responseTimeMs, wordLength) {
 	const perCharacterTimeMs = 500;
-	const fastTimeMs = 500;
-	const moderateTimeMs = 2000;
+	const fastTimeMs = 1000;
+	const moderateTimeMs = 2500;
 	if (responseTimeMs == Number.MAX_SAFE_INTEGER) {
 		return WRONG_RESPONSE;
 	}
@@ -1441,7 +1441,11 @@ function dumpStats(currentWordList) {
 			}
 			if (shortestWord == true) {
 				console.log(
-					kanji + " Response Times " + word.responseTimesMs.join(", ") +
+					kanji +
+					" Response Times " + word.responseTimesMs.join(", ") +
+					", Response Types " + word.responseTimesMs.map(
+						(x) => getResponseTypeFromTimeMs(x, wordLength).text
+					).join(", ") +
 					", Fastest time: " + fastestTime +
 					", Probability: " + word.probability
 				)
@@ -1450,7 +1454,11 @@ function dumpStats(currentWordList) {
 			} else {
 				timePerExtraCharacter = (fastestTime - fastestTimeForShortestWord) / (wordLength - shortestWordLength);
 				console.log(
-					kanji + " Response Times " + word.responseTimesMs.join(", ") +
+					kanji +
+					" Response Times " + word.responseTimesMs.join(", ") +
+					", Response Types " + word.responseTimesMs.map(
+						(x) => getResponseTypeFromTimeMs(x, wordLength).text
+					).join(", ") +
 					", Fastest time: ", fastestTime +
 					", Per extra character time: " + timePerExtraCharacter +
 					", Probability: " + word.probability
