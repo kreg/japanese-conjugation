@@ -100,12 +100,6 @@ input[type="radio"] + label {
 	padding-top: 0.3rem;
 }
 
-.count p {
-	margin: 0;
-	margin-bottom: 0;
-	font-size: 1rem;
-}
-
 #unseen-count-container {
 	float: left;
 	flex: 1;
@@ -124,22 +118,27 @@ input[type="radio"] + label {
 
 #unseen-count-text {
 	color:skyblue;
+	text-align: left;
 }
 
 #fast-count-text {
 	color:green;
+	text-align: right;
 }
 
 #medium-count-text {
 	color: yellowgreen;
+	text-align: right;
 }
 
 #slow-count-text {
 	color:#ffc439;
+	text-align: right;
 }
 
 #wrong-count-text {
 	color:rgb(218, 5, 5);
+	text-align: right;
 }
 
 #verb-box {
@@ -159,7 +158,6 @@ input[type="radio"] + label {
 
 #verb-container {
 	text-align: center;
-	width: 100%;
 	display: flex;
 }
 
