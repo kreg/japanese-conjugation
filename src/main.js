@@ -1382,15 +1382,62 @@ function getProbabilityWeight(responseTimesMs, wordLength) {
 	return probabilityWeight;
 }
 
+function updateCounts(currentWordList) {
+	let unseenCount = 0;
+	let wrongCount = 0;
+	let slowCount = 0;
+	let mediumCount = 0;
+	let fastCount = 0;
+	for (let i = 0; i < currentWordList.length; i++) {
+		let word = currentWordList[i];
+		if (word.responseTimesMs.length == 0) {
+			unseenCount++;
+			continue;
+		}
+		let responseType = getResponseTypeFromTimeMs(
+			word.responseTimesMs[word.responseTimesMs.length-1],
+			word.conjugation.validAnswers[0].length
+		);
+		switch(responseType) {
+			case FAST_RESPONSE:
+				fastCount++;
+				break;
+			case MODERATE_RESPONSE:
+				mediumCount++;
+				break;
+			case SLOW_RESPONSE:
+				slowCount++;
+				break;
+			case WRONG_RESPONSE:
+				wrongCount++;
+				break;
+		}
+	}
+	updateCountText("unseen-count-text", unseenCount);
+	updateCountText("wrong-count-text", wrongCount);
+	updateCountText("slow-count-text", slowCount);
+	updateCountText("medium-count-text", mediumCount);
+	updateCountText("fast-count-text", fastCount);
+}
+
+function updateCountText(id, count) {
+	let element = document.getElementById(id);
+	if (element.textContent != count) {
+		element.textContent = count;
+		element.classList.add("grow-animation");
+	}
+}
+
 function dumpProbabilities(currentWords) {
 	console.log("---- Probabilities ----");
 	let probabilities = {};
 	for (let i = 0; i < currentWords.length; i++) {
-		if (probabilities[currentWords[i].probability] === undefined) {
-			probabilities[currentWords[i].probability] = []
+		let word = currentWords[i];
+		if (probabilities[word.probability] === undefined) {
+			probabilities[word.probability] = []
 		}
-		probabilities[currentWords[i].probability].push(
-			currentWords[i].conjugation.validAnswers[1]
+		probabilities[word.probability].push(
+			word.conjugation.validAnswers[1]
 		);
 	}
 	Object.entries(probabilities).forEach(([key, value]) => {
@@ -1403,17 +1450,18 @@ function dumpStats(currentWordList) {
 	let unseenWordProbability = -1;
 	const stats = {}
 	for (let i = 0; i < currentWordList.length; i++) {
-		if (currentWordList[i].responseTimesMs.length > 0) {
-			let kanjiAnswer = currentWordList[i].conjugation.validAnswers[1]
-			let hiraganaAnswerLength = currentWordList[i].conjugation.validAnswers[0].length
+		let word = currentWordList[i];
+		if (word.responseTimesMs.length > 0) {
+			let kanjiAnswer = word.conjugation.validAnswers[1]
+			let hiraganaAnswerLength = word.conjugation.validAnswers[0].length
 			if (stats[hiraganaAnswerLength] === undefined) {
 				stats[hiraganaAnswerLength] = {}
 			}
-			stats[hiraganaAnswerLength][kanjiAnswer] = currentWordList[i]
+			stats[hiraganaAnswerLength][kanjiAnswer] = word
 		} else {
 			if (unseenWordProbability == -1) {
-				unseenWordProbability = currentWordList[i].probability
-			} else if (unseenWordProbability != currentWordList[i].probability) {
+				unseenWordProbability = word.probability
+			} else if (unseenWordProbability != word.probability) {
 				console.error("Expected unseen words to all have the same probability")
 			}
 		}
@@ -1661,6 +1709,41 @@ class ConjugationApp {
 					.getElementById("max-streak-text")
 					.classList.remove(e.animationName);
 			});
+		document
+			.getElementById("unseen-count-text")
+			.addEventListener("animationend", (e) => {
+				document
+					.getElementById("unseen-count-text")
+					.classList.remove(e.animationName);
+			});
+		document
+			.getElementById("wrong-count-text")
+			.addEventListener("animationend", (e) => {
+				document
+					.getElementById("wrong-count-text")
+					.classList.remove(e.animationName);
+			});
+		document
+			.getElementById("slow-count-text")
+			.addEventListener("animationend", (e) => {
+				document
+					.getElementById("slow-count-text")
+					.classList.remove(e.animationName);
+			});
+		document
+			.getElementById("medium-count-text")
+			.addEventListener("animationend", (e) => {
+				document
+					.getElementById("medium-count-text")
+					.classList.remove(e.animationName);
+			});
+		document
+			.getElementById("fast-count-text")
+			.addEventListener("animationend", (e) => {
+				document
+					.getElementById("fast-count-text")
+					.classList.remove(e.animationName);
+			});
 
 		document
 			.getElementById("status-box")
@@ -1699,6 +1782,11 @@ class ConjugationApp {
 		if (this.state.currentStreak0OnReset) {
 			document.getElementById("current-streak-text").textContent = "0";
 			this.state.currentStreak0OnReset = false;
+		}
+
+		if (this.state.loadCountsOnReset) {
+			updateCounts(this.state.currentWordList);
+			this.state.loadCountsOnReset = false;
 		}
 
 		if (this.state.loadWordOnReset) {
@@ -1816,6 +1904,9 @@ class ConjugationApp {
 			}
 			this.state.loadWordOnReset = true;
 
+			updateCounts(this.state.currentWordList);
+			this.state.loadCountsOnReset = false;
+
 			mainInput.disabled = true;
 			toggleDisplayNone(
 				document.getElementById("press-any-key-text"),
@@ -1931,6 +2022,7 @@ class ConjugationApp {
 
 		this.state.currentStreak0OnReset = false;
 		this.state.loadWordOnReset = false;
+		this.state.loadCountsOnReset = true;
 
 		document.getElementById("max-streak-text").textContent =
 			this.state.maxScoreObjects[this.state.maxScoreIndex].score;
