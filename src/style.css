@@ -100,7 +100,51 @@ input[type="radio"] + label {
 	padding-top: 0.3rem;
 }
 
+.count p {
+	margin: 0;
+	margin-bottom: 0;
+	font-size: 1rem;
+}
+
+#unseen-count-container {
+	float: left;
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+}
+
+#seen-count-container {
+	float: right;
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+}
+
+#unseen-count-text {
+	color:skyblue;
+}
+
+#fast-count-text {
+	color:green;
+}
+
+#medium-count-text {
+	color: yellowgreen;
+}
+
+#slow-count-text {
+	color:#ffc439;
+}
+
+#wrong-count-text {
+	color:rgb(218, 5, 5);
+}
+
 #verb-box {
+	flex: 1;
+	min-width: 70%;
 	display: inline-block;
 	padding: 0.45rem;
 	border-radius: 1.14rem;
@@ -115,7 +159,10 @@ input[type="radio"] + label {
 
 #verb-container {
 	text-align: center;
+	width: 100%;
+	display: flex;
 }
+
 
 #verb-text {
 	font-size: 2.2rem;
