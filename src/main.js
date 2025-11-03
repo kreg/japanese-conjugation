@@ -1694,77 +1694,29 @@ class ConjugationApp {
 		document
 			.getElementById("options-form")
 			.addEventListener("submit", (e) => this.backButtonClicked(e));
-
-		document
-			.getElementById("current-streak-text")
-			.addEventListener("animationend", (e) => {
-				document
-					.getElementById("current-streak-text")
-					.classList.remove(e.animationName);
-			});
-		document
-			.getElementById("max-streak-text")
-			.addEventListener("animationend", (e) => {
-				document
-					.getElementById("max-streak-text")
-					.classList.remove(e.animationName);
-			});
-		document
-			.getElementById("unseen-count-text")
-			.addEventListener("animationend", (e) => {
-				document
-					.getElementById("unseen-count-text")
-					.classList.remove(e.animationName);
-			});
-		document
-			.getElementById("wrong-count-text")
-			.addEventListener("animationend", (e) => {
-				document
-					.getElementById("wrong-count-text")
-					.classList.remove(e.animationName);
-			});
-		document
-			.getElementById("slow-count-text")
-			.addEventListener("animationend", (e) => {
-				document
-					.getElementById("slow-count-text")
-					.classList.remove(e.animationName);
-			});
-		document
-			.getElementById("medium-count-text")
-			.addEventListener("animationend", (e) => {
-				document
-					.getElementById("medium-count-text")
-					.classList.remove(e.animationName);
-			});
-		document
-			.getElementById("fast-count-text")
-			.addEventListener("animationend", (e) => {
-				document
-					.getElementById("fast-count-text")
-					.classList.remove(e.animationName);
-			});
-
-		document
-			.getElementById("status-box")
-			.addEventListener("animationend", (e) => {
-				document
-					.getElementById("status-box")
-					.classList.remove(e.animationName);
-			});
-
-		document
-			.getElementById("input-tooltip")
-			.addEventListener("animationend", (e) => {
-				document
-					.getElementById("input-tooltip")
-					.classList.remove(e.animationName);
-			});
-
+		this.removeAnimation("current-streak-text");
+		this.removeAnimation("max-streak-text");
+		this.removeAnimation("unseen-count-text");
+		this.removeAnimation("wrong-count-text");
+		this.removeAnimation("slow-count-text");
+		this.removeAnimation("medium-count-text");
+		this.removeAnimation("fast-count-text");
+		this.removeAnimation("status-box");
+		this.removeAnimation("input-tooltip");
 		document.addEventListener("keydown", this.onKeyDown.bind(this));
 		document.addEventListener("touchend", this.onTouchEnd.bind(this));
 
 		optionsMenuInit();
+	}
+
+	removeAnimation(id) {
+		document
+			.getElementById(id)
+			.addEventListener("animationend", (e) => {
+				document
+					.getElementById(id)
+					.classList.remove(e.animationName);
+			});
 	}
 
 	loadMainView() {
