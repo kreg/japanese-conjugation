@@ -1309,7 +1309,6 @@ function updateProbabilites(currentWords, wordsRecentlySeenQueue, currentWord) {
 		let dequeuedWord = wordsRecentlySeenQueue.shift();
 		let wordLength = dequeuedWord.conjugation.validAnswers[0].length;
 		let probabilityWeight = getProbabilityWeight(dequeuedWord.responseTimesMs, wordLength);
-		console.log(dequeuedWord.conjugation.validAnswers[1] + " probability weight " + probabilityWeight);
 		dequeuedWord.probability = probabilityWeight
 	}
 
@@ -1448,9 +1447,9 @@ function dumpProbabilities(currentWords) {
 			probabilities[word.probability] = []
 		}
 		let text = word.conjugation.validAnswers[1];
-		for (j = 3; j > 0; j--) {
+		for (let j = 0; j < word.responseTimesMs.length; j++) {
 			let responseType = getResponseTypeFromTimeMs(
-				word.responseTimesMs[word.responseTimesMs.length - j],
+				word.responseTimesMs[j],
 				word.conjugation.validAnswers[0].length
 			);
 			text += responseType.icon;
@@ -1632,7 +1631,7 @@ function updateStatusBoxes(word, entryText) {
 			subConjugationForm +
 			")</span>"
 			: ""
-			}<br>${entryText} ○`;
+			} 🙈🐇🐢<br>${entryText} ○`;
 	} else {
 		document.getElementById("verb-box").style.background = typeToWordBoxColor(
 			word.wordJSON.type
