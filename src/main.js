@@ -1320,19 +1320,23 @@ function updateProbabilites(currentWords, wordsRecentlySeenQueue, currentWord) {
 }
 
 class ResponseTypes {
-	constructor(text, probabilityWeight) {
+	constructor(text, icon, probabilityWeight) {
 		this.text = text;
+		this.icon = icon;
 		this.probabilityWeight = probabilityWeight;
 	}
 }
 
-const UNSEEN_RESPONSE = new ResponseTypes("unseen", 80);
-const FAST_RESPONSE = new ResponseTypes("fast", 1);
-const MEDIUM_RESPONSE = new ResponseTypes("medium", 10);
-const SLOW_RESPONSE = new ResponseTypes("slow", 20);
-const WRONG_RESPONSE = new ResponseTypes("wrong", 500);
+const UNSEEN_RESPONSE = new ResponseTypes("unseen", "🙈", 50);
+const FAST_RESPONSE = new ResponseTypes("fast", "🐇", 1);
+const MEDIUM_RESPONSE = new ResponseTypes("medium", "🐖", 10);
+const SLOW_RESPONSE = new ResponseTypes("slow", "🐢", 20);
+const WRONG_RESPONSE = new ResponseTypes("wrong", "❌", 500);
 
 function getResponseTypeFromTimeMs(responseTimeMs, wordLength) {
+	if (responseTimeMs === undefined) {
+		return UNSEEN_RESPONSE;
+	}
 	const perCharacterTimeMs = 500;
 	const fastTimeMs = 1000;
 	const moderateTimeMs = 2500;
@@ -1358,17 +1362,15 @@ class RecencyProbabilityWeighter {
 		if (recencyWeight === undefined) {
 			return null;
 		}
+		// If next most recent response time is undefined, getResponseTypeFromTimeMs will 
+		// return UNSEEN_RESPONSE.
 		let responseTimeMs = this.responseTimesMs.pop();
-		if (responseTimeMs === undefined) {
-			return UNSEEN_RESPONSE.probabilityWeight * recencyWeight;
-		} else {
-			return getResponseTypeFromTimeMs(responseTimeMs, wordLength).probabilityWeight * recencyWeight;
-		}
+		return getResponseTypeFromTimeMs(responseTimeMs, wordLength).probabilityWeight * recencyWeight;
 	}
 }
 
 function getProbabilityWeight(responseTimesMs, wordLength) {
-	let recencyProbabilityWeighter = new RecencyProbabilityWeighter(responseTimesMs, [3, 2, 1]);
+	let recencyProbabilityWeighter = new RecencyProbabilityWeighter(responseTimesMs, [1, 2, 3]);
 	let probabilityWeight = 0;
 	while (true) {
 		let probabiltyWeightForResponse = recencyProbabilityWeighter.get(wordLength);
@@ -1388,10 +1390,6 @@ function updateCounts(currentWordList, currentWord) {
 	let fastCount = 0;
 	for (let i = 0; i < currentWordList.length; i++) {
 		let word = currentWordList[i];
-		if (word.responseTimesMs.length == 0) {
-			unseenCount++;
-			continue;
-		}
 		let responseType = getResponseTypeFromTimeMs(
 			word.responseTimesMs[word.responseTimesMs.length - 1],
 			word.conjugation.validAnswers[0].length
@@ -1408,6 +1406,9 @@ function updateCounts(currentWordList, currentWord) {
 				break;
 			case WRONG_RESPONSE:
 				wrongCount++;
+				break;
+			case UNSEEN_RESPONSE:
+				unseenCount++;
 				break;
 		}
 	}
@@ -1446,9 +1447,15 @@ function dumpProbabilities(currentWords) {
 		if (probabilities[word.probability] === undefined) {
 			probabilities[word.probability] = []
 		}
-		probabilities[word.probability].push(
-			word.conjugation.validAnswers[1]
-		);
+		let text = word.conjugation.validAnswers[1];
+		for (j = 3; j > 0; j--) {
+			let responseType = getResponseTypeFromTimeMs(
+				word.responseTimesMs[word.responseTimesMs.length - j],
+				word.conjugation.validAnswers[0].length
+			);
+			text += responseType.icon;
+		}
+		probabilities[word.probability].push(text);
 	}
 	Object.entries(probabilities).forEach(([key, value]) => {
 		console.log(key + ": " + value.join(", "));
