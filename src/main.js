@@ -1,5 +1,3 @@
-// since the weights are mostly only used to make things repeat after x amount of rounds, they are overkill
-// would be less work to just wait x rounds and immeditely show what you missed, without updating any weights.
 "use strict";
 import { bind, isJapanese } from "wanakana";
 import {
@@ -1268,10 +1266,10 @@ class Word {
 		this.responseTimesMs = [];
 	}
 
-	addResponseTime(inputWasCorrect, startTimestamp) {
+	addResponseTime(inputWasCorrect, responseTimeMs) {
 		const maxResponseTimeSlots = 3;
 		if (inputWasCorrect) {
-			this.responseTimesMs.push(Date.now() - startTimestamp);
+			this.responseTimesMs.push(responseTimeMs);
 		} else {
 			this.responseTimesMs.push(Number.MAX_SAFE_INTEGER);
 		}
@@ -1330,7 +1328,7 @@ class ResponseTypes {
 
 const FAST_RESPONSE = new ResponseTypes("fast", 1);
 const UNSEEN_RESPONSE = new ResponseTypes("unseen", 5);
-const MODERATE_RESPONSE = new ResponseTypes("moderate", 50);
+const MEDIUM_RESPONSE = new ResponseTypes("medium", 50);
 const SLOW_RESPONSE = new ResponseTypes("slow", 100);
 const WRONG_RESPONSE = new ResponseTypes("wrong", 500);
 
@@ -1345,7 +1343,7 @@ function getResponseTypeFromTimeMs(responseTimeMs, wordLength) {
 		return FAST_RESPONSE;
 	}
 	if (responseTimeMs <= moderateTimeMs + perCharacterTimeMs * wordLength) {
-		return MODERATE_RESPONSE;
+		return MEDIUM_RESPONSE;
 	}
 	return SLOW_RESPONSE;
 }
@@ -1382,7 +1380,7 @@ function getProbabilityWeight(responseTimesMs, wordLength) {
 	return probabilityWeight;
 }
 
-function updateCounts(currentWordList) {
+function updateCounts(currentWordList, currentWord) {
 	let unseenCount = 0;
 	let wrongCount = 0;
 	let slowCount = 0;
@@ -1395,14 +1393,14 @@ function updateCounts(currentWordList) {
 			continue;
 		}
 		let responseType = getResponseTypeFromTimeMs(
-			word.responseTimesMs[word.responseTimesMs.length-1],
+			word.responseTimesMs[word.responseTimesMs.length - 1],
 			word.conjugation.validAnswers[0].length
 		);
-		switch(responseType) {
+		switch (responseType) {
 			case FAST_RESPONSE:
 				fastCount++;
 				break;
-			case MODERATE_RESPONSE:
+			case MEDIUM_RESPONSE:
 				mediumCount++;
 				break;
 			case SLOW_RESPONSE:
@@ -1413,17 +1411,29 @@ function updateCounts(currentWordList) {
 				break;
 		}
 	}
-	updateCountText("unseen-count-text", unseenCount);
-	updateCountText("wrong-count-text", wrongCount);
-	updateCountText("slow-count-text", slowCount);
-	updateCountText("medium-count-text", mediumCount);
-	updateCountText("fast-count-text", fastCount);
+
+	// Force grow animation on the count for the current word's response type
+	// even if the count doesn't change, to give feedback to the user.
+	let currentWordResponseType = null;
+	if (currentWord != null) {
+		currentWordResponseType = getResponseTypeFromTimeMs(
+			currentWord.responseTimesMs[currentWord.responseTimesMs.length - 1],
+			currentWord.conjugation.validAnswers[0].length
+		);
+	}
+	updateCountText("unseen-count-text", unseenCount, false);
+	updateCountText("wrong-count-text", wrongCount, currentWordResponseType == WRONG_RESPONSE);
+	updateCountText("slow-count-text", slowCount, currentWordResponseType == SLOW_RESPONSE);
+	updateCountText("medium-count-text", mediumCount, currentWordResponseType == MEDIUM_RESPONSE);
+	updateCountText("fast-count-text", fastCount, currentWordResponseType == FAST_RESPONSE);
 }
 
-function updateCountText(id, count) {
+function updateCountText(id, count, forceGrow) {
 	let element = document.getElementById(id);
 	if (element.textContent != count) {
 		element.textContent = count;
+		element.classList.add("grow-animation");
+	} else if (forceGrow) {
 		element.classList.add("grow-animation");
 	}
 }
@@ -1674,8 +1684,6 @@ export class MaxScoreObject {
 	}
 }
 
-// Array index 0 = verbs, 1 = adjectives
-// Stored in an array instead of object to make parsing faster. Upon reflection this was not worth it.
 function initApp() {
 	new ConjugationApp(wordData);
 }
@@ -1737,7 +1745,7 @@ class ConjugationApp {
 		}
 
 		if (this.state.loadCountsOnReset) {
-			updateCounts(this.state.currentWordList);
+			updateCounts(this.state.currentWordList, null);
 			this.state.loadCountsOnReset = false;
 		}
 
@@ -1838,7 +1846,10 @@ class ConjugationApp {
 				);
 
 			// record response time
-			this.state.currentWord.addResponseTime(inputWasCorrect, this.state.startTimestamp);
+			this.state.currentWord.addResponseTime(
+				inputWasCorrect,
+				Date.now() - this.state.startTimestamp
+			);
 
 			updateProbabilites(
 				this.state.currentWordList,
@@ -1856,7 +1867,7 @@ class ConjugationApp {
 			}
 			this.state.loadWordOnReset = true;
 
-			updateCounts(this.state.currentWordList);
+			updateCounts(this.state.currentWordList, this.state.currentWord);
 			this.state.loadCountsOnReset = false;
 
 			mainInput.disabled = true;
