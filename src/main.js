@@ -1326,10 +1326,10 @@ class ResponseTypes {
 	}
 }
 
+const UNSEEN_RESPONSE = new ResponseTypes("unseen", 80);
 const FAST_RESPONSE = new ResponseTypes("fast", 1);
-const UNSEEN_RESPONSE = new ResponseTypes("unseen", 5);
-const MEDIUM_RESPONSE = new ResponseTypes("medium", 50);
-const SLOW_RESPONSE = new ResponseTypes("slow", 100);
+const MEDIUM_RESPONSE = new ResponseTypes("medium", 10);
+const SLOW_RESPONSE = new ResponseTypes("slow", 20);
 const WRONG_RESPONSE = new ResponseTypes("wrong", 500);
 
 function getResponseTypeFromTimeMs(responseTimeMs, wordLength) {
