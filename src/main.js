@@ -1450,26 +1450,7 @@ function getSpeedEmojisForWord(word) {
 	return emojis;
 }
 
-function dumpProbabilities(currentWords) {
-	console.log("---- Probabilities ----");
-	let probabilities = {};
-	for (let i = 0; i < currentWords.length; i++) {
-		let word = currentWords[i];
-		if (probabilities[word.probability] === undefined) {
-			probabilities[word.probability] = []
-		}
-		probabilities[word.probability].push(
-			word.conjugation.validAnswers[1] + getSpeedEmojisForWord(word)
-		);
-	}
-	Object.entries(probabilities).forEach(([key, value]) => {
-		console.log(key + ": " + value.join(", "));
-	});
-}
-
-function dumpStats(currentWordList) {
-	console.log("\nStats")
-	let unseenWordProbability = -1;
+function logResponseTimeDetails(currentWordList) {
 	const stats = {}
 	for (let i = 0; i < currentWordList.length; i++) {
 		let word = currentWordList[i];
@@ -1480,12 +1461,6 @@ function dumpStats(currentWordList) {
 				stats[hiraganaAnswerLength] = {}
 			}
 			stats[hiraganaAnswerLength][kanjiAnswer] = word
-		} else {
-			if (unseenWordProbability == -1) {
-				unseenWordProbability = word.probability
-			} else if (unseenWordProbability != word.probability) {
-				console.error("Expected unseen words to all have the same probability")
-			}
 		}
 	}
 
@@ -1502,7 +1477,8 @@ function dumpStats(currentWordList) {
 	let fastestTimeForShortestWord = -1;
 	let shortestWord = true;
 	for (const [wordLength, value] of Object.entries(stats)) {
-		console.log(wordLength + " character Words")
+		console.log("");
+		console.log("---- " + wordLength + "-character Word Response Times ----");
 		let fastestTimeForWordLength = Number.MAX_SAFE_INTEGER;
 		for (const [kanji, word] of Object.entries(value)) {
 			let fastestTime = Math.min(...word.responseTimesMs);
@@ -1512,12 +1488,11 @@ function dumpStats(currentWordList) {
 			if (shortestWord == true) {
 				console.log(
 					kanji +
-					" Response Times " + word.responseTimesMs.join(", ") +
-					", Response Types " + word.responseTimesMs.map(
-						(x) => getResponseTypeFromTimeMs(x, wordLength).text
+					" " + word.responseTimesMs.map(
+						(x) => x + getResponseTypeFromTimeMs(x, wordLength).emoji
 					).join(", ") +
-					", Fastest time: " + fastestTime +
-					", Probability: " + word.probability
+					", fastest: " + fastestTime +
+					", probabilty weight: " + word.probability
 				)
 				shortestWordLength = wordLength;
 				fastestTimeForShortestWord = fastestTimeForWordLength
@@ -1525,20 +1500,35 @@ function dumpStats(currentWordList) {
 				timePerExtraCharacter = (fastestTime - fastestTimeForShortestWord) / (wordLength - shortestWordLength);
 				console.log(
 					kanji +
-					" Response Times " + word.responseTimesMs.join(", ") +
-					", Response Types " + word.responseTimesMs.map(
-						(x) => getResponseTypeFromTimeMs(x, wordLength).text
+					" " + word.responseTimesMs.map(
+						(x) => x + getResponseTypeFromTimeMs(x, wordLength).emoji
 					).join(", ") +
-					", Fastest time: ", fastestTime +
-					", Per extra character time: " + timePerExtraCharacter +
-					", Probability: " + word.probability
+					", fastest: ", fastestTime +
+					", per extra character time: " + timePerExtraCharacter +
+					", probability weight: " + word.probability
 				);
 			}
 		}
 		shortestWord = false;
-		console.log("Unseen Words");
-		console.log("Probability: " + unseenWordProbability);
 	}
+}
+
+function logProbabilityWeights(currentWords) {
+	console.log("");
+	console.log("---- Probability Weights ----");
+	let probabilities = {};
+	for (let i = 0; i < currentWords.length; i++) {
+		let word = currentWords[i];
+		if (probabilities[word.probability] === undefined) {
+			probabilities[word.probability] = []
+		}
+		probabilities[word.probability].push(
+			word.conjugation.validAnswers[1] + getSpeedEmojisForWord(word)
+		);
+	}
+	Object.entries(probabilities).forEach(([key, value]) => {
+		console.log(key + ": " + value.join(", "));
+	});
 }
 
 // returns new object with all conjugations
@@ -1869,8 +1859,8 @@ class ConjugationApp {
 				this.state.wordsRecentlySeenQueue,
 				this.state.currentWord
 			);
-			dumpStats(this.state.currentWordList);
-			dumpProbabilities(this.state.currentWordList);
+			logResponseTimeDetails(this.state.currentWordList);
+			logProbabilityWeights(this.state.currentWordList);
 
 			if (inputWasCorrect) {
 				addToScore(1, this.state.maxScoreObjects, this.state.maxScoreIndex);
