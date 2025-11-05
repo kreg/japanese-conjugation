@@ -1705,22 +1705,22 @@ class ConjugationApp {
 		document
 			.getElementById("options-form")
 			.addEventListener("submit", (e) => this.backButtonClicked(e));
-		this.removeAnimation("current-streak-text");
-		this.removeAnimation("max-streak-text");
-		this.removeAnimation("unseen-count-text");
-		this.removeAnimation("wrong-count-text");
-		this.removeAnimation("slow-count-text");
-		this.removeAnimation("medium-count-text");
-		this.removeAnimation("fast-count-text");
-		this.removeAnimation("status-box");
-		this.removeAnimation("input-tooltip");
+		this.addAnimationEndEventListener("current-streak-text");
+		this.addAnimationEndEventListener("max-streak-text");
+		this.addAnimationEndEventListener("unseen-count-text");
+		this.addAnimationEndEventListener("wrong-count-text");
+		this.addAnimationEndEventListener("slow-count-text");
+		this.addAnimationEndEventListener("medium-count-text");
+		this.addAnimationEndEventListener("fast-count-text");
+		this.addAnimationEndEventListener("status-box");
+		this.addAnimationEndEventListener("input-tooltip");
 		document.addEventListener("keydown", this.onKeyDown.bind(this));
 		document.addEventListener("touchend", this.onTouchEnd.bind(this));
 
 		optionsMenuInit();
 	}
 
-	removeAnimation(id) {
+	addAnimationEndEventListener(id) {
 		document
 			.getElementById(id)
 			.addEventListener("animationend", (e) => {
