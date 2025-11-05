@@ -1319,18 +1319,18 @@ function updateProbabilites(currentWords, wordsRecentlySeenQueue, currentWord) {
 }
 
 class ResponseTypes {
-	constructor(text, icon, probabilityWeight) {
+	constructor(text, emoji, probabilityWeight) {
 		this.text = text;
-		this.icon = icon;
+		this.emoji = emoji;
 		this.probabilityWeight = probabilityWeight;
 	}
 }
 
-const UNSEEN_RESPONSE = new ResponseTypes("unseen", "🙈", 50);
+const UNSEEN_RESPONSE = new ResponseTypes("unseen", "🙈", 100);
 const FAST_RESPONSE = new ResponseTypes("fast", "🐇", 1);
 const MEDIUM_RESPONSE = new ResponseTypes("medium", "🐖", 10);
 const SLOW_RESPONSE = new ResponseTypes("slow", "🐢", 20);
-const WRONG_RESPONSE = new ResponseTypes("wrong", "❌", 500);
+const WRONG_RESPONSE = new ResponseTypes("wrong", "🐍", 20000);
 
 function getResponseTypeFromTimeMs(responseTimeMs, wordLength) {
 	if (responseTimeMs === undefined) {
@@ -1361,7 +1361,7 @@ class RecencyProbabilityWeighter {
 		if (recencyWeight === undefined) {
 			return null;
 		}
-		// If next most recent response time is undefined, getResponseTypeFromTimeMs will 
+		// If next most recent response time is undefined, getResponseTypeFromTimeMs will
 		// return UNSEEN_RESPONSE.
 		let responseTimeMs = this.responseTimesMs.pop();
 		return getResponseTypeFromTimeMs(responseTimeMs, wordLength).probabilityWeight * recencyWeight;
@@ -1438,16 +1438,16 @@ function updateCountText(id, count, forceGrow) {
 	}
 }
 
-function getSpeedIconsForWord(word) {
-	let icons = ""
+function getSpeedEmojisForWord(word) {
+	let emojis = ""
 	for (let i = 0; i < word.responseTimesMs.length; i++) {
 		let responseType = getResponseTypeFromTimeMs(
 			word.responseTimesMs[i],
 			word.conjugation.validAnswers[0].length
 		);
-		icons += responseType.icon;
+		emojis += responseType.emoji;
 	}
-	return icons;
+	return emojis;
 }
 
 function dumpProbabilities(currentWords) {
@@ -1459,7 +1459,7 @@ function dumpProbabilities(currentWords) {
 			probabilities[word.probability] = []
 		}
 		probabilities[word.probability].push(
-			word.conjugation.validAnswers[1] + getSpeedIconsForWord(word)
+			word.conjugation.validAnswers[1] + getSpeedEmojisForWord(word)
 		);
 	}
 	Object.entries(probabilities).forEach(([key, value]) => {
@@ -1629,16 +1629,16 @@ function updateStatusBoxes(word, entryText) {
 	let statusBox = document.getElementById("status-box");
 	toggleDisplayNone(statusBox, false);
 
+	let emojis = getSpeedEmojisForWord(word);
 	if (word.conjugation.validAnswers.some((e) => e == entryText)) {
 		statusBox.style.background = "green";
-		let icons = getSpeedIconsForWord(word);
 		const subConjugationForm = getSubConjugationForm(word, entryText);
 		document.getElementById("status-text").innerHTML = `Correct${subConjugationForm != null
 			? '<span class="sub-conjugation-indicator">(' +
 			subConjugationForm +
 			")</span>"
 			: ""
-			} ${icons}<br>${entryText} ○`;
+			} ${emojis}<br>${entryText} ○`;
 	} else {
 		document.getElementById("verb-box").style.background = typeToWordBoxColor(
 			word.wordJSON.type
@@ -1653,7 +1653,7 @@ function updateStatusBoxes(word, entryText) {
 		// Assuming validAnswers[0] is the hiragana answer
 		document.getElementById("status-text").innerHTML =
 			(entryText == "" ? "_" : entryText) +
-			" ×<br>" +
+			" " + emojis + "<br>" +
 			word.conjugation.validAnswers[0] +
 			" ○";
 	}
