@@ -1438,6 +1438,18 @@ function updateCountText(id, count, forceGrow) {
 	}
 }
 
+function getSpeedIconsForWord(word) {
+	let icons = ""
+	for (let i = 0; i < word.responseTimesMs.length; i++) {
+		let responseType = getResponseTypeFromTimeMs(
+			word.responseTimesMs[i],
+			word.conjugation.validAnswers[0].length
+		);
+		icons += responseType.icon;
+	}
+	return icons;
+}
+
 function dumpProbabilities(currentWords) {
 	console.log("---- Probabilities ----");
 	let probabilities = {};
@@ -1446,15 +1458,9 @@ function dumpProbabilities(currentWords) {
 		if (probabilities[word.probability] === undefined) {
 			probabilities[word.probability] = []
 		}
-		let text = word.conjugation.validAnswers[1];
-		for (let j = 0; j < word.responseTimesMs.length; j++) {
-			let responseType = getResponseTypeFromTimeMs(
-				word.responseTimesMs[j],
-				word.conjugation.validAnswers[0].length
-			);
-			text += responseType.icon;
-		}
-		probabilities[word.probability].push(text);
+		probabilities[word.probability].push(
+			word.conjugation.validAnswers[1] + getSpeedIconsForWord(word)
+		);
 	}
 	Object.entries(probabilities).forEach(([key, value]) => {
 		console.log(key + ": " + value.join(", "));
@@ -1625,13 +1631,14 @@ function updateStatusBoxes(word, entryText) {
 
 	if (word.conjugation.validAnswers.some((e) => e == entryText)) {
 		statusBox.style.background = "green";
+		let icons = getSpeedIconsForWord(word);
 		const subConjugationForm = getSubConjugationForm(word, entryText);
 		document.getElementById("status-text").innerHTML = `Correct${subConjugationForm != null
 			? '<span class="sub-conjugation-indicator">(' +
 			subConjugationForm +
 			")</span>"
 			: ""
-			} 🙈🐇🐢<br>${entryText} ○`;
+			} ${icons}<br>${entryText} ○`;
 	} else {
 		document.getElementById("verb-box").style.background = typeToWordBoxColor(
 			word.wordJSON.type
@@ -1839,13 +1846,6 @@ class ConjugationApp {
 				.classList.remove("question-screen");
 			document.getElementById("main-view").classList.add("results-screen");
 
-			mainInput.blur();
-			updateStatusBoxes(this.state.currentWord, inputValue);
-			// If the furigana or translation were made transparent during the question, make them visible now
-			showFurigana(this.state.settings.furigana, false);
-			showTranslation(this.state.settings.translation, false);
-
-			// update probabilities before next word is chosen so don't choose same word
 			const inputWasCorrect =
 				this.state.currentWord.conjugation.validAnswers.some(
 					(e) => e == inputValue
@@ -1857,6 +1857,13 @@ class ConjugationApp {
 				Date.now() - this.state.startTimestamp
 			);
 
+			mainInput.blur();
+			updateStatusBoxes(this.state.currentWord, inputValue);
+			// If the furigana or translation were made transparent during the question, make them visible now
+			showFurigana(this.state.settings.furigana, false);
+			showTranslation(this.state.settings.translation, false);
+
+			// update probabilities before next word is chosen so don't choose same word
 			updateProbabilites(
 				this.state.currentWordList,
 				this.state.wordsRecentlySeenQueue,
