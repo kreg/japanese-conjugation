@@ -49,14 +49,17 @@ input[type="radio"] + label {
 	margin-bottom: 0;
 }
 
-#goal-container {
+#count-container {
 	display: flex;
 	justify-content: space-between;
 	text-align: center;
 	font-size: 0.65rem;
+	padding: 0.4rem;
+	padding-top: 0.3rem;
+
 }
 
-.goal-text {
+.count-text {
 	font-size: 1rem;
 }
 
@@ -111,11 +114,6 @@ input[type="radio"] + label {
 	content: "";
 	display: table;
 	clear: both;
-}
-
-#goal-container {
-	padding: 0.4rem;
-	padding-top: 0.3rem;
 }
 
 #verb-box {
