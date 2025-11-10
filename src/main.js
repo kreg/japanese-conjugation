@@ -1921,6 +1921,7 @@ class ConjugationApp {
 			localStorage.setItem("maxScoreIndex", newMaxScoreIndex);
 			this.state.maxScoreIndex = newMaxScoreIndex;
 			this.state.currentStreak0OnReset = true;
+			this.state.loadCountsOnReset = true;
 			this.state.loadWordOnReset = true;
 
 			this.applySettingsUpdateWordList();
