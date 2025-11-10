@@ -39,11 +39,6 @@ input[type="radio"] + label {
 	cursor: pointer;
 }
 
-.streak p {
-	margin: 0;
-	margin-bottom: 0;
-}
-
 .count p {
 	margin: 0;
 	margin-bottom: 0;

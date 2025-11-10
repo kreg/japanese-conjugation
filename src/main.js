@@ -7,7 +7,7 @@ import {
 	removeNonConjugationSettings,
 	showFurigana,
 	showTranslation,
-	findMaxScoreIndex,
+	visibleConjugationSettingsChanged,
 	applyAllSettingsFilterWords,
 	applyNonConjugationSettings,
 	optionsMenuInit,
@@ -1291,6 +1291,12 @@ function equalizeProbabilities(currentWords) {
 	setAllProbabilitiesToValue(currentWords, getProbabilityWeight([], -1));
 }
 
+function clearResponseTimes(currentWords) {
+	for (let i = 0; i < currentWords.length; i++) {
+		currentWords[i].responseTimesMs = [];
+	}
+}
+
 function updateProbabilites(currentWords, wordsRecentlySeenQueue, currentWord) {
 	const roundsToWait = 2;
 
@@ -1566,38 +1572,6 @@ function pickRandomWord(wordList) {
 	}
 }
 
-function addToScore(amount = 1, maxScoreObjects, maxScoreIndex) {
-	if (amount == 0) {
-		return;
-	}
-	let max = document.getElementById("max-streak-text");
-	let current = document.getElementById("current-streak-text");
-
-	if (parseInt(max.textContent) <= parseInt(current.textContent)) {
-		let newAmount = parseInt(max.textContent) + amount;
-		max.textContent = newAmount;
-		if (
-			!document
-				.getElementById("max-streak")
-				.classList.contains("display-none")
-		) {
-			max.classList.add("grow-animation");
-		}
-
-		maxScoreObjects[maxScoreIndex].score = newAmount;
-		localStorage.setItem("maxScoreObjects", JSON.stringify(maxScoreObjects));
-	}
-
-	current.textContent = parseInt(current.textContent) + amount;
-	if (
-		!document
-			.getElementById("current-streak")
-			.classList.contains("display-none")
-	) {
-		current.classList.add("grow-animation");
-	}
-}
-
 function typeToWordBoxColor(type) {
 	switch (type) {
 		case "u":
@@ -1679,14 +1653,6 @@ function getSubConjugationForm(word, validAnswer) {
 	return null;
 }
 
-// stored in array in local storage
-export class MaxScoreObject {
-	constructor(score, settings) {
-		this.score = score;
-		this.settings = settings;
-	}
-}
-
 function initApp() {
 	new ConjugationApp(wordData);
 }
@@ -1705,8 +1671,6 @@ class ConjugationApp {
 		document
 			.getElementById("options-form")
 			.addEventListener("submit", (e) => this.backButtonClicked(e));
-		this.addAnimationEndEventListener("current-streak-text");
-		this.addAnimationEndEventListener("max-streak-text");
 		this.addAnimationEndEventListener("unseen-count-text");
 		this.addAnimationEndEventListener("wrong-count-text");
 		this.addAnimationEndEventListener("slow-count-text");
@@ -1741,11 +1705,6 @@ class ConjugationApp {
 
 		toggleDisplayNone(document.getElementById("press-any-key-text"), true);
 		toggleDisplayNone(document.getElementById("status-box"), true);
-
-		if (this.state.currentStreak0OnReset) {
-			document.getElementById("current-streak-text").textContent = "0";
-			this.state.currentStreak0OnReset = false;
-		}
 
 		if (this.state.loadCountsOnReset) {
 			updateCounts(this.state.currentWordList, null);
@@ -1862,12 +1821,6 @@ class ConjugationApp {
 			logResponseTimeDetails(this.state.currentWordList);
 			logProbabilityWeights(this.state.currentWordList);
 
-			if (inputWasCorrect) {
-				addToScore(1, this.state.maxScoreObjects, this.state.maxScoreIndex);
-				this.state.currentStreak0OnReset = false;
-			} else {
-				this.state.currentStreak0OnReset = true;
-			}
 			this.state.loadWordOnReset = true;
 
 			updateCounts(this.state.currentWordList, this.state.currentWord);
@@ -1897,30 +1850,11 @@ class ConjugationApp {
 	backButtonClicked(e) {
 		e.preventDefault();
 
+		let previousSettings = structuredClone(this.state.settings);
 		insertSettingsFromUi(this.state.settings);
 		localStorage.setItem("settings", JSON.stringify(this.state.settings));
 
-		const visibleConjugationSettings = getVisibleConjugationSettings();
-		let newMaxScoreIndex = findMaxScoreIndex(
-			this.state.maxScoreObjects,
-			visibleConjugationSettings
-		);
-
-		if (newMaxScoreIndex === -1) {
-			this.state.maxScoreObjects.push(
-				new MaxScoreObject(0, visibleConjugationSettings)
-			);
-			localStorage.setItem(
-				"maxScoreObjects",
-				JSON.stringify(this.state.maxScoreObjects)
-			);
-			newMaxScoreIndex = this.state.maxScoreObjects.length - 1;
-		}
-
-		if (newMaxScoreIndex !== this.state.maxScoreIndex) {
-			localStorage.setItem("maxScoreIndex", newMaxScoreIndex);
-			this.state.maxScoreIndex = newMaxScoreIndex;
-			this.state.currentStreak0OnReset = true;
+		if (visibleConjugationSettingsChanged(previousSettings)) {
 			this.state.loadCountsOnReset = true;
 			this.state.loadWordOnReset = true;
 
@@ -1935,9 +1869,6 @@ class ConjugationApp {
 			applyNonConjugationSettings(this.state.settings);
 		}
 
-		document.getElementById("max-streak-text").textContent =
-			this.state.maxScoreObjects[this.state.maxScoreIndex].score;
-
 		toggleDisplayNone(document.getElementById("main-view"), false);
 		toggleDisplayNone(document.getElementById("options-view"), true);
 		toggleDisplayNone(document.getElementById("donation-section"), true);
@@ -1949,37 +1880,13 @@ class ConjugationApp {
 		this.state = {};
 		this.state.completeWordList = createWordList(words);
 
-		if (
-			!localStorage.getItem("maxScoreObjects") ||
-			!localStorage.getItem("maxScoreIndex") ||
-			!localStorage.getItem("settings")
-		) {
-			this.state.maxScoreIndex = 0;
-			localStorage.setItem("maxScoreIndex", this.state.maxScoreIndex);
-
+		if (!localStorage.getItem("settings")) {
 			this.state.settings = getDefaultSettings();
 			localStorage.setItem("settings", JSON.stringify(this.state.settings));
-
-			this.state.maxScoreObjects = [
-				new MaxScoreObject(
-					0,
-					removeNonConjugationSettings(this.state.settings)
-				),
-			];
-			localStorage.setItem(
-				"maxScoreObjects",
-				JSON.stringify(this.state.maxScoreObjects)
-			);
 		} else {
-			this.state.maxScoreIndex = parseInt(
-				localStorage.getItem("maxScoreIndex")
-			);
 			this.state.settings = Object.assign(
 				getDefaultAdditiveSettings(),
 				JSON.parse(localStorage.getItem("settings"))
-			);
-			this.state.maxScoreObjects = JSON.parse(
-				localStorage.getItem("maxScoreObjects")
 			);
 		}
 
@@ -1987,12 +1894,8 @@ class ConjugationApp {
 		this.state.currentWord = loadNewWord(this.state.currentWordList);
 		this.state.wordsRecentlySeenQueue = [];
 
-		this.state.currentStreak0OnReset = false;
 		this.state.loadWordOnReset = false;
 		this.state.loadCountsOnReset = true;
-
-		document.getElementById("max-streak-text").textContent =
-			this.state.maxScoreObjects[this.state.maxScoreIndex].score;
 
 		this.loadMainView();
 	}
@@ -2002,6 +1905,7 @@ class ConjugationApp {
 			this.state.settings,
 			this.state.completeWordList
 		);
+		clearResponseTimes(filteredWords);
 		equalizeProbabilities(filteredWords);
 		this.state.currentWordList = filteredWords;
 	}

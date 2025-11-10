@@ -377,7 +377,6 @@ function showHideTranslationSubOptions() {
 
 export function applyNonConjugationSettings(settings) {
 	showEmojis(settings.emoji);
-	showStreak(settings.streak);
 	// showTranslation and showFurigana are dependent on the state, so we can't set them here
 }
 
@@ -517,45 +516,25 @@ const questionRemoveFilters = {
 };
 
 /**
- * Searches the maxScoreObjects array for a maxScoreObject with specified settings.
- * Make sure visibleConjugationSettings doesn't contain any settings that aren't tied to max score (like "Show English translations" for example)
+ * Determines if visible conjugation settings differ from previous settings.
+ * Make sure visibleConjugationSettings doesn't contain any settings that aren't tied to counts (like "Show English translations" for example)
  *
- * @param {Array<MaxScoreObject>} maxScoreObjects
- * @param {Object} visibleConjugationSettings
- * @returns The index where the match was found. If no match was found, returns -1.
+ * @param {Object} previous settings
+ * @returns true if visible conjugaiont settings changed; false otherwise.
  */
-export function findMaxScoreIndex(maxScoreObjects, visibleConjugationSettings) {
-	let settingKeys = Object.keys(visibleConjugationSettings);
-	let flag;
-	for (let i = 0; i < maxScoreObjects.length; i++) {
-		flag = true;
-		for (let s of settingKeys) {
-			if (maxScoreObjects[i].settings[s] != visibleConjugationSettings[s]) {
-				flag = false;
-				break;
-			}
-		}
-		if (flag == true) {
-			return i;
+export function visibleConjugationSettingsChanged(previousSettings) {
+	for (const [key, setting] of Object.entries(getVisibleConjugationSettings())) {
+		if (previousSettings[key] != setting) {
+			return true;
 		}
 	}
-	return -1;
+	return false;
 }
 
 export const showEmojis = function (show) {
 	document.getElementById("conjugation-inquery-text").className = show
 		? ""
 		: "hide-emojis";
-};
-
-export const showStreak = function (show) {
-	document.querySelectorAll(".streak").forEach((s) => {
-		if (show) {
-			s.classList.remove("display-none");
-		} else {
-			s.classList.add("display-none");
-		}
-	});
 };
 
 // Can be shown never, always, or only after answering.
