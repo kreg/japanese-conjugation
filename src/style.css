@@ -310,6 +310,11 @@ button {
 	padding-right: 0.4rem;
 }
 
+#stats-button {
+	margin-left: -0.27rem;
+	float: left;
+}
+
 button:hover {
 	background: rgb(70, 70, 70);
 	cursor: pointer;
@@ -334,9 +339,28 @@ h2 {
 	font-size: 1rem;
 }
 
-#options-view {
+#options-view,
+#stats-view {
 	padding-left: 0.73rem;
 	padding-right: 0.73rem;
+}
+
+#stats-table {
+	width: 100%;
+	border-collapse: collapse;
+	margin-bottom: 0.9rem;
+	font-size: 0.8rem;
+	color: var(--whiteTextColor);
+}
+
+.stats-word-cell {
+	text-align: right;
+	width: 50%;
+}
+
+.stats-emojis-cell {
+	text-align: center;
+	width: 50%;
 }
 
 #options-form {

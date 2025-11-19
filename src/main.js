@@ -34,6 +34,7 @@ const SCREENS = Object.freeze({
 	// Incorrect and correct answers are considered the same "results" screen
 	results: 1,
 	settings: 2,
+	stats: 3
 });
 
 function wordTypeToDisplayText(type) {
@@ -1537,6 +1538,24 @@ function logProbabilityWeights(currentWords) {
 	});
 }
 
+function loadStatsView(currentWords) {
+	const tableBody = document.getElementById("stats-table-body");
+	tableBody.replaceChildren();
+	for (let i = 0; i < currentWords.length; i++) {
+		let word = currentWords[i];
+		if (word.responseTimesMs.length == 0) {
+			continue;
+		}
+		let row = tableBody.insertRow();
+		let row0 = row.insertCell(0);
+		row0.textContent = word.conjugation.validAnswers.join(", ");
+		row0.className = "stats-word-cell";
+		let row1 = row.insertCell(1);
+		row1.textContent = getSpeedEmojisForWord(word);
+		row1.className = "stats-emojis-cell";
+	}
+}
+
 // returns new object with all conjugations
 function createWordList(JSONWords) {
 	let wordList = {}
@@ -1671,6 +1690,12 @@ class ConjugationApp {
 		document
 			.getElementById("options-form")
 			.addEventListener("submit", (e) => this.backButtonClicked(e));
+		document
+			.getElementById("stats-button")
+			.addEventListener("click", (e) => this.statsButtonClicked(e));
+		document
+			.getElementById("stats-back-button")
+			.addEventListener("click", (e) => this.statsBackButtonClicked(e));
 		this.addAnimationEndEventListener("unseen-count-text");
 		this.addAnimationEndEventListener("wrong-count-text");
 		this.addAnimationEndEventListener("slow-count-text");
@@ -1743,7 +1768,7 @@ class ConjugationApp {
 		if (
 			this.state.activeScreen === SCREENS.results &&
 			keyCode == "13" &&
-			document.activeElement.id !== "options-button"
+			(document.activeElement.id !== "options-button" || document.activeElement.id !== "stats-button")
 		) {
 			this.loadMainView();
 		}
@@ -1753,7 +1778,7 @@ class ConjugationApp {
 	onTouchEnd(e) {
 		if (
 			this.state.activeScreen === SCREENS.results &&
-			e.target != document.getElementById("options-button")
+			(e.target != document.getElementById("options-button") || e.target != document.getElementById("stats-button"))
 		) {
 			this.loadMainView();
 		}
@@ -1844,6 +1869,7 @@ class ConjugationApp {
 
 		toggleDisplayNone(document.getElementById("main-view"), true);
 		toggleDisplayNone(document.getElementById("options-view"), false);
+		toggleDisplayNone(document.getElementById("stats-view"), true);
 		toggleDisplayNone(document.getElementById("donation-section"), false);
 	}
 
@@ -1871,8 +1897,26 @@ class ConjugationApp {
 
 		toggleDisplayNone(document.getElementById("main-view"), false);
 		toggleDisplayNone(document.getElementById("options-view"), true);
+		toggleDisplayNone(document.getElementById("stats-view"), true);
 		toggleDisplayNone(document.getElementById("donation-section"), true);
 
+		this.loadMainView();
+	}
+
+	statsButtonClicked(e) {
+		this.state.activeScreen = SCREENS.stats;
+		loadStatsView(this.state.currentWordList);
+		toggleDisplayNone(document.getElementById("main-view"), true);
+		toggleDisplayNone(document.getElementById("options-view"), true);
+		toggleDisplayNone(document.getElementById("stats-view"), false);
+		toggleDisplayNone(document.getElementById("donation-section"), false);
+	}
+
+	statsBackButtonClicked(e) {
+		toggleDisplayNone(document.getElementById("main-view"), false);
+		toggleDisplayNone(document.getElementById("options-view"), true);
+		toggleDisplayNone(document.getElementById("stats-view"), true);
+		toggleDisplayNone(document.getElementById("donation-section"), true);
 		this.loadMainView();
 	}
 
