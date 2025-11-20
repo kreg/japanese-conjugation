@@ -377,6 +377,7 @@ function showHideTranslationSubOptions() {
 
 export function applyNonConjugationSettings(settings) {
 	showEmojis(settings.emoji);
+	showScores(settings.score);
 	// showTranslation and showFurigana are dependent on the state, so we can't set them here
 }
 
@@ -535,6 +536,16 @@ export const showEmojis = function (show) {
 	document.getElementById("conjugation-inquery-text").className = show
 		? ""
 		: "hide-emojis";
+};
+
+export const showScores = function (show) {
+       document.querySelectorAll(".score").forEach((s) => {
+               if (show) {
+                       s.classList.remove("display-none");
+               } else {
+                       s.classList.add("display-none");
+               }
+       });
 };
 
 // Can be shown never, always, or only after answering.
