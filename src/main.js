@@ -51,10 +51,13 @@ function wordTypeToDisplayText(type) {
 	}
 }
 
-function conjugationInqueryFormatting(conjugation) {
+function conjugationInqueryFormatting(conjugation, emojisOnly = false) {
 	let newString = "";
 
 	function createInqueryText(text, emoji) {
+		if (emojisOnly) {
+			return emoji;
+		}
 		return `<div class="conjugation-inquery"><div class="inquery-emoji">${emoji}</div><div class="inquery-text">${text}</div></div> `;
 	}
 
@@ -1547,12 +1550,28 @@ function loadStatsView(currentWords) {
 			continue;
 		}
 		let row = tableBody.insertRow();
-		let row0 = row.insertCell(0);
-		row0.textContent = word.conjugation.validAnswers.join(", ");
-		row0.className = "stats-word-cell";
-		let row1 = row.insertCell(1);
-		row1.textContent = getSpeedEmojisForWord(word);
-		row1.className = "stats-emojis-cell";
+
+		let textCell = row.insertCell();
+		let insideRubyTags = /<ruby>(.*)<\/ruby>/g;
+		let insideRtTags = /<rt>(.*)<\/rt>/g;
+		textCell.textContent = word.wordJSON.kanji
+			.replaceAll(insideRtTags, "")
+			.replaceAll(insideRubyTags, "$1");
+		textCell.className = "stats-text-cell";
+
+		let translationCell = row.insertCell();
+		translationCell.textContent = word.wordJSON.eng;
+		translationCell.className = "stats-translation-cell";
+
+		let conjugationCell = row.insertCell();
+		conjugationCell.textContent = conjugationInqueryFormatting(word.conjugation, true);
+		conjugationCell.className = "stats-conjugation-cell";
+
+		let speedCell = row.insertCell();
+		speedCell.textContent = getSpeedEmojisForWord(word);
+		speedCell.className = "stats-speed-cell";
+
+
 	}
 }
 
