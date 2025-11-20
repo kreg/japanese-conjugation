@@ -517,7 +517,7 @@ const questionRemoveFilters = {
 
 /**
  * Determines if visible conjugation settings differ from previous settings.
- * Make sure visibleConjugationSettings doesn't contain any settings that aren't tied to counts (like "Show English translations" for example)
+ * Make sure visibleConjugationSettings doesn't contain any settings that aren't tied to scoress (like "Show English translations" for example)
  *
  * @param {Object} previous settings
  * @returns true if visible conjugaiont settings changed; false otherwise.

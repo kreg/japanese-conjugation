@@ -1391,12 +1391,12 @@ function getProbabilityWeight(responseTimesMs, wordLength) {
 	return probabilityWeight;
 }
 
-function updateCounts(currentWordList, currentWord) {
-	let unseenCount = 0;
-	let wrongCount = 0;
-	let slowCount = 0;
-	let mediumCount = 0;
-	let fastCount = 0;
+function updateScores(currentWordList, currentWord) {
+	let unseenScore = 0;
+	let wrongScore = 0;
+	let slowScore = 0;
+	let mediumScore = 0;
+	let fastScore = 0;
 	for (let i = 0; i < currentWordList.length; i++) {
 		let word = currentWordList[i];
 		let responseType = getResponseTypeFromTimeMs(
@@ -1405,25 +1405,25 @@ function updateCounts(currentWordList, currentWord) {
 		);
 		switch (responseType) {
 			case FAST_RESPONSE:
-				fastCount++;
+				fastScore++;
 				break;
 			case MEDIUM_RESPONSE:
-				mediumCount++;
+				mediumScore++;
 				break;
 			case SLOW_RESPONSE:
-				slowCount++;
+				slowScore++;
 				break;
 			case WRONG_RESPONSE:
-				wrongCount++;
+				wrongScore++;
 				break;
 			case UNSEEN_RESPONSE:
-				unseenCount++;
+				unseenScore++;
 				break;
 		}
 	}
 
-	// Force grow animation on the count for the current word's response type
-	// even if the count doesn't change, to give feedback to the user.
+	// Force grow animation on the score for the current word's response type
+	// even if the score doesn't change, to give feedback to the user.
 	let currentWordResponseType = null;
 	if (currentWord != null) {
 		currentWordResponseType = getResponseTypeFromTimeMs(
@@ -1431,17 +1431,17 @@ function updateCounts(currentWordList, currentWord) {
 			currentWord.conjugation.validAnswers[0].length
 		);
 	}
-	updateCountText("unseen-count-text", unseenCount, false);
-	updateCountText("wrong-count-text", wrongCount, currentWordResponseType == WRONG_RESPONSE);
-	updateCountText("slow-count-text", slowCount, currentWordResponseType == SLOW_RESPONSE);
-	updateCountText("medium-count-text", mediumCount, currentWordResponseType == MEDIUM_RESPONSE);
-	updateCountText("fast-count-text", fastCount, currentWordResponseType == FAST_RESPONSE);
+	updateScoreText("unseen-score-text", unseenScore, false);
+	updateScoreText("wrong-score-text", wrongScore, currentWordResponseType == WRONG_RESPONSE);
+	updateScoreText("slow-score-text", slowScore, currentWordResponseType == SLOW_RESPONSE);
+	updateScoreText("medium-score-text", mediumScore, currentWordResponseType == MEDIUM_RESPONSE);
+	updateScoreText("fast-score-text", fastScore, currentWordResponseType == FAST_RESPONSE);
 }
 
-function updateCountText(id, count, forceGrow) {
+function updateScoreText(id, score, forceGrow) {
 	let element = document.getElementById(id);
-	if (element.textContent != count) {
-		element.textContent = count;
+	if (element.textContent != score) {
+		element.textContent = score;
 		element.classList.add("grow-animation");
 	} else if (forceGrow) {
 		element.classList.add("grow-animation");
@@ -1727,11 +1727,11 @@ class ConjugationApp {
 		document
 			.getElementById("stats-back-button")
 			.addEventListener("click", (e) => this.statsBackButtonClicked(e));
-		this.addAnimationEndEventListener("unseen-count-text");
-		this.addAnimationEndEventListener("wrong-count-text");
-		this.addAnimationEndEventListener("slow-count-text");
-		this.addAnimationEndEventListener("medium-count-text");
-		this.addAnimationEndEventListener("fast-count-text");
+		this.addAnimationEndEventListener("unseen-score-text");
+		this.addAnimationEndEventListener("wrong-score-text");
+		this.addAnimationEndEventListener("slow-score-text");
+		this.addAnimationEndEventListener("medium-score-text");
+		this.addAnimationEndEventListener("fast-score-text");
 		this.addAnimationEndEventListener("status-box");
 		this.addAnimationEndEventListener("input-tooltip");
 		document.addEventListener("keydown", this.onKeyDown.bind(this));
@@ -1762,9 +1762,9 @@ class ConjugationApp {
 		toggleDisplayNone(document.getElementById("press-any-key-text"), true);
 		toggleDisplayNone(document.getElementById("status-box"), true);
 
-		if (this.state.loadCountsOnReset) {
-			updateCounts(this.state.currentWordList, null);
-			this.state.loadCountsOnReset = false;
+		if (this.state.loadScoresOnReset) {
+			updateScores(this.state.currentWordList, null);
+			this.state.loadScoresOnReset = false;
 		}
 
 		if (this.state.loadWordOnReset) {
@@ -1879,8 +1879,8 @@ class ConjugationApp {
 
 			this.state.loadWordOnReset = true;
 
-			updateCounts(this.state.currentWordList, this.state.currentWord);
-			this.state.loadCountsOnReset = false;
+			updateScores(this.state.currentWordList, this.state.currentWord);
+			this.state.loadScoresOnReset = false;
 
 			mainInput.disabled = true;
 			toggleDisplayNone(
@@ -1912,7 +1912,7 @@ class ConjugationApp {
 		localStorage.setItem("settings", JSON.stringify(this.state.settings));
 
 		if (visibleConjugationSettingsChanged(previousSettings)) {
-			this.state.loadCountsOnReset = true;
+			this.state.loadScoresOnReset = true;
 			this.state.loadWordOnReset = true;
 
 			this.applySettingsUpdateWordList();
@@ -1970,7 +1970,7 @@ class ConjugationApp {
 		this.state.wordsRecentlySeenQueue = [];
 
 		this.state.loadWordOnReset = false;
-		this.state.loadCountsOnReset = true;
+		this.state.loadScoresOnReset = true;
 
 		this.loadMainView();
 	}
