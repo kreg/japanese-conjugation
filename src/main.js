@@ -1543,35 +1543,47 @@ function logProbabilityWeights(currentWords) {
 
 function loadStatsView(currentWords) {
 	const tableBody = document.getElementById("stats-table-body");
+	// clear existing rows
 	tableBody.replaceChildren();
+
+	// build row content
+	let insideRubyTags = /<ruby>(.*)<\/ruby>/g;
+	let insideRtTags = /<rt>(.*)<\/rt>/g;
+	let rowData = []
 	for (let i = 0; i < currentWords.length; i++) {
 		let word = currentWords[i];
 		if (word.responseTimesMs.length == 0) {
 			continue;
 		}
+
+		// Probability weight is 0 if the word is still on the wordsRecentlySeenQueue.
+		// For stats view, calculate what it will be.
+		let probabilityWeight = word.probability;
+		if (probabilityWeight == 0) {
+			probabilityWeight = getProbabilityWeight(
+				word.responseTimesMs, 
+				word.conjugation.validAnswers[0].length
+			);
+		}
+
+		let rowObject = {
+			text: word.wordJSON.kanji.replaceAll(insideRtTags, "").replaceAll(insideRubyTags, "$1"),
+			conjugation: conjugationInqueryFormatting(word.conjugation, true),
+			speed: getSpeedEmojisForWord(word),
+			probabilityWeight: probabilityWeight
+		}
+		rowData.push(rowObject);
+	}
+
+	// sort by probability weight ascending
+	rowData.sort((a, b) => a.probabilityWeight - b.probabilityWeight);
+
+	// insert rows
+	for (let i = 0; i < rowData.length; i++) {
 		let row = tableBody.insertRow();
-
-		let textCell = row.insertCell();
-		let insideRubyTags = /<ruby>(.*)<\/ruby>/g;
-		let insideRtTags = /<rt>(.*)<\/rt>/g;
-		textCell.textContent = word.wordJSON.kanji
-			.replaceAll(insideRtTags, "")
-			.replaceAll(insideRubyTags, "$1");
-		textCell.className = "stats-text-cell";
-
-		let translationCell = row.insertCell();
-		translationCell.textContent = word.wordJSON.eng;
-		translationCell.className = "stats-translation-cell";
-
-		let conjugationCell = row.insertCell();
-		conjugationCell.textContent = conjugationInqueryFormatting(word.conjugation, true);
-		conjugationCell.className = "stats-conjugation-cell";
-
-		let speedCell = row.insertCell();
-		speedCell.textContent = getSpeedEmojisForWord(word);
-		speedCell.className = "stats-speed-cell";
-
-
+		row.insertCell().textContent = rowData[i].text;
+		row.insertCell().textContent = rowData[i].conjugation;
+		row.insertCell().textContent = rowData[i].speed;
 	}
 }
 
