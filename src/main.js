@@ -1547,8 +1547,6 @@ function loadStatsView(currentWords) {
 	tableBody.replaceChildren();
 
 	// build row content
-	let insideRubyTags = /<ruby>(.*)<\/ruby>/g;
-	let insideRtTags = /<rt>(.*)<\/rt>/g;
 	let rowData = []
 	for (let i = 0; i < currentWords.length; i++) {
 		let word = currentWords[i];
@@ -1561,13 +1559,13 @@ function loadStatsView(currentWords) {
 		let probabilityWeight = word.probability;
 		if (probabilityWeight == 0) {
 			probabilityWeight = getProbabilityWeight(
-				word.responseTimesMs, 
+				word.responseTimesMs,
 				word.conjugation.validAnswers[0].length
 			);
 		}
 
 		let rowObject = {
-			text: word.wordJSON.kanji.replaceAll(insideRtTags, "").replaceAll(insideRubyTags, "$1"),
+			text: toKanjiPlusHiragana(word.wordJSON.kanji),
 			conjugation: conjugationInqueryFormatting(word.conjugation, true),
 			speed: getSpeedEmojisForWord(word),
 			probabilityWeight: probabilityWeight
@@ -1575,8 +1573,15 @@ function loadStatsView(currentWords) {
 		rowData.push(rowObject);
 	}
 
-	// sort by probability weight ascending
-	rowData.sort((a, b) => a.probabilityWeight - b.probabilityWeight);
+	// sort by probability weight ascending; if the same, sort by text
+	function sortFunction(a, b) {
+		let diff = a.probabilityWeight - b.probabilityWeight;
+		if (diff != 0) {
+			return diff;
+		}
+		return Intl.Collator("ja").compare(a.text, b.text);
+	}
+	rowData.sort(sortFunction);
 
 	// insert rows
 	for (let i = 0; i < rowData.length; i++) {
