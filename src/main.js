@@ -1565,7 +1565,8 @@ function loadStatsView(currentWords) {
 		}
 
 		let rowObject = {
-			text: toKanjiPlusHiragana(word.wordJSON.kanji),
+			kanji: toKanjiPlusHiragana(word.wordJSON.kanji),
+			hiragana: word.conjugation.validAnswers[0],
 			conjugation: conjugationInqueryFormatting(word.conjugation, true),
 			speed: getSpeedEmojisForWord(word),
 			probabilityWeight: probabilityWeight
@@ -1573,20 +1574,20 @@ function loadStatsView(currentWords) {
 		rowData.push(rowObject);
 	}
 
-	// sort by probability weight ascending; if the same, sort by text
+	// sort by probability weight ascending; within that by kana reading
 	function sortFunction(a, b) {
 		let diff = a.probabilityWeight - b.probabilityWeight;
 		if (diff != 0) {
 			return diff;
 		}
-		return Intl.Collator("ja").compare(a.text, b.text);
+		return Intl.Collator("ja").compare(a.hiragana, b.hiragana);
 	}
 	rowData.sort(sortFunction);
 
 	// insert rows
 	for (let i = 0; i < rowData.length; i++) {
 		let row = tableBody.insertRow();
-		row.insertCell().textContent = rowData[i].text;
+		row.insertCell().textContent = rowData[i].kanji;
 		row.insertCell().textContent = rowData[i].conjugation;
 		row.insertCell().textContent = rowData[i].speed;
 	}
