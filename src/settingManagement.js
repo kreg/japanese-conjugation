@@ -378,6 +378,7 @@ function showHideTranslationSubOptions() {
 export function applyNonConjugationSettings(settings) {
 	showEmojis(settings.emoji);
 	showScores(settings.score);
+	showStatsButton(settings.stats);
 	// showTranslation and showFurigana are dependent on the state, so we can't set them here
 }
 
@@ -546,6 +547,15 @@ export const showScores = function (show) {
                        s.classList.add("display-none");
                }
        });
+};
+
+export const showStatsButton = function (show) {
+	let statsButton = document.getElementById("stats-button");
+    if (show) {	
+		statsButton.classList.remove("display-none");
+	} else {
+		statsButton.classList.add("display-none");
+	}
 };
 
 // Can be shown never, always, or only after answering.
