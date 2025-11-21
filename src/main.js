@@ -1874,8 +1874,9 @@ class ConjugationApp {
 				this.state.wordsRecentlySeenQueue,
 				this.state.currentWord
 			);
-			logResponseTimeDetails(this.state.currentWordList);
-			logProbabilityWeights(this.state.currentWordList);
+			// Uncomment the following to log reponse time details and probability weights assigned.
+			// logResponseTimeDetails(this.state.currentWordList);
+			// logProbabilityWeights(this.state.currentWordList);
 
 			this.state.loadWordOnReset = true;
 
