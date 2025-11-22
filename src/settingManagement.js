@@ -551,7 +551,7 @@ export const showScores = function (show) {
 
 export const showStatsButton = function (show) {
 	let statsButton = document.getElementById("stats-button");
-    if (show) {	
+    if (show) {
 		statsButton.classList.remove("display-none");
 	} else {
 		statsButton.classList.add("display-none");
