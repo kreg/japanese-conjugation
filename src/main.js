@@ -1338,7 +1338,7 @@ class ResponseTypes {
 
 const UNSEEN_RESPONSE = new ResponseTypes("unseen", "🙈", 100);
 const FAST_RESPONSE = new ResponseTypes("fast", "🐇", 1);
-const MEDIUM_RESPONSE = new ResponseTypes("medium", "🐖", 10);
+const MEDIUM_RESPONSE = new ResponseTypes("medium", "🦔", 10);
 const SLOW_RESPONSE = new ResponseTypes("slow", "🐢", 20);
 const WRONG_RESPONSE = new ResponseTypes("wrong", "🐍", 20000);
 
