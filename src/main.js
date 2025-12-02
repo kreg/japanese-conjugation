@@ -16,7 +16,7 @@ import {
 	insertSettingsFromUi,
 	getDefaultAdditiveSettings,
 } from "./settingManagement.js";
-import { wordData } from "./worddata.js";
+import { wordData } from "./wordData.js";
 import { CONJUGATION_TYPES, PARTS_OF_SPEECH } from "./wordEnums.js";
 import {
 	toggleDisplayNone,
